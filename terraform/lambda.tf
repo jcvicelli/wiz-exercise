@@ -49,7 +49,10 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Action = [
           "ssm:SendCommand"
         ]
-        Resource = "*" # Scope this ideally, but "*" fits the "permissive" theme
+        Resource = [
+          "arn:aws:ec2:eu-central-1:${data.aws_caller_identity.current.account_id}:instance/${module.ec2_mongodb.id}",
+          "arn:aws:ssm:eu-central-1:*:document/AWS-RunShellScript"
+        ]
       },
       {
         Effect = "Allow"

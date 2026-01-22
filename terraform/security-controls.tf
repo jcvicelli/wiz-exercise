@@ -154,6 +154,42 @@ resource "aws_config_config_rule" "sg_attached" {
   depends_on = [aws_config_configuration_recorder.main]
 }
 
+# Config Rule: Restricted SSH
+resource "aws_config_config_rule" "restricted_ssh" {
+  name = "restricted-ssh"
+
+  source {
+    owner             = "AWS"
+    source_identifier = "INCOMING_SSH_DISABLED"
+  }
+
+  depends_on = [aws_config_configuration_recorder.main]
+}
+
+# Config Rule: EC2 Managed by SSM
+resource "aws_config_config_rule" "ec2_ssm_managed" {
+  name = "ec2-instance-managed-by-systems-manager"
+
+  source {
+    owner             = "AWS"
+    source_identifier = "EC2_INSTANCE_MANAGED_BY_SYSTEMS_MANAGER"
+  }
+
+  depends_on = [aws_config_configuration_recorder.main]
+}
+
+# Config Rule: EKS Logging Enabled
+resource "aws_config_config_rule" "eks_logging" {
+  name = "eks-cluster-logging-enabled"
+
+  source {
+    owner             = "AWS"
+    source_identifier = "EKS_CLUSTER_LOGGING_ENABLED"
+  }
+
+  depends_on = [aws_config_configuration_recorder.main]
+}
+
 # --- IAM Permission Boundary (Preventative Control) ---
 
 resource "aws_iam_policy" "permission_boundary" {
