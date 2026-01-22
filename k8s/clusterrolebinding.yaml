@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: todo-app-sa-admin-binding
+subjects:
+- kind: ServiceAccount
+  name: todo-app-sa
+  namespace: wiz-exercise
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin # INTENTIONAL WEAKNESS: Pod has full cluster control
+  apiGroup: rbac.authorization.k8s.io

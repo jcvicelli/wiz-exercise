@@ -1,0 +1,55 @@
+name: 'Infrastructure'
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'terraform/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'terraform/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    environment: production
+
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsProvisionerRole
+        aws-region: eu-central-1
+
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: terraform/
+        soft_fail: true # Set to true to allow pipeline to continue even with findings (for demo)
+        framework: terraform
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Plan
+      run: terraform plan -input=false
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve -input=false

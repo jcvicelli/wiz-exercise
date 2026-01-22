@@ -3,6 +3,8 @@
 resource "aws_iam_role" "mongodb_role" {
   name = "MongoDBEC2Role"
 
+  permissions_boundary = aws_iam_policy.permission_boundary.arn
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
