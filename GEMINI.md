@@ -18,8 +18,3 @@
 - Modern EKS Access Entries (No legacy aws-auth ConfigMap).
 - Runtime Secrets: AWS Secrets Manager.
 - Intentional Weaknesses: Public S3 bucket & MongoDB on Public EC2 for Wiz discovery.
-
-## Current State & Task
-- details on implementation.md
-- Context: Step 1 (Bootstrap Phase).
-- Task: Generate OIDC and Scoped IAM Role Terraform specifically for eu-central-1.
