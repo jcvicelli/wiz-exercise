@@ -69,18 +69,12 @@ jobs:
         # Get MongoDB Private IP from EC2
         MONGODB_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=wiz-exercise-mongodb" "Name=instance-state-name,Values=running" --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
         
-        # Get MongoDB Password from Secrets Manager
-        SECRET_NAME=$(aws secretsmanager list-secrets --query "SecretList[?starts_with(Name, 'wiz-exercise/mongodb-auth-')].Name" --output text | awk '{print $1}')
-        MONGODB_PASSWORD=$(aws secretsmanager get-secret-value --secret-id $SECRET_NAME --query SecretString --output text | jq -r .password)
-
         # Replace placeholders in manifests
         sed -i "s/AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/${ECR_REGISTRY}/g" k8s/deployment.yaml
         sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/mongodb-external.yaml
-        sed -i "s/MONGODB_PASSWORD/${MONGODB_PASSWORD}/g" k8s/secret.yaml
         
         # Apply manifests
         kubectl apply -f k8s/namespace.yaml
-        kubectl apply -f k8s/secret.yaml
         kubectl apply -f k8s/serviceaccount.yaml
         kubectl apply -f k8s/clusterrolebinding.yaml
         kubectl apply -f k8s/service.yaml

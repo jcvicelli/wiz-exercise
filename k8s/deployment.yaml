@@ -23,27 +23,29 @@ spec:
         ports:
         - containerPort: 8080
         env:
-        - name: MONGODB_URI
+        - name: MONGODB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mongodb-connection
-              key: MONGODB_URI
+              name: mongodb-connection-csi
+              key: password
+        - name: MONGODB_URI
+          value: "mongodb://todoapp:$(MONGODB_PASSWORD)@mongodb-external:27017/tododb"
+        volumeMounts:
+        - name: mongodb-secrets
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "250m"
-            memory: "256Mi"
-        readinessProbe:
-          httpGet:
-            path: /healthz # Assuming app has health check, or /
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
+...
         livenessProbe:
           httpGet:
             path: /healthz
             port: 8080
           initialDelaySeconds: 15
           periodSeconds: 20
+      volumes:
+      - name: mongodb-secrets
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "mongodb-secret-provider"
