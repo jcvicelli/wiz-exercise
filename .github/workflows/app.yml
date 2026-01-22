@@ -21,6 +21,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Run Gosec Security Scanner
+      uses: securego/gosec@master
+      with:
+        args: ./app/...
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:

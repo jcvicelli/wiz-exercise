@@ -30,7 +30,7 @@ module "eks" {
 
   access_entries = {
     github_actions = {
-      principal_arn     = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/GitHubActionsProvisionerRole"
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/GitHubActionsProvisionerRole"
       policy_associations = {
         admin = {
           policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterAdminPolicy"

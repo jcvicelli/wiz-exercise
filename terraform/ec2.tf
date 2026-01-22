@@ -34,7 +34,7 @@ resource "aws_security_group" "mongodb_sg" {
     from_port   = 27017
     to_port     = 27017
     protocol    = "tcp"
-    cidr_blocks = module.vpc.private_subnets_cidr_blocks 
+    cidr_blocks = module.vpc.private_subnets_cidr_blocks
     description = "MongoDB access from Private Subnets"
   }
 
@@ -58,7 +58,7 @@ module "ec2_mongodb" {
 
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t3.small"
-  key_name               = "wiz-exercise-key" 
+  key_name               = "wiz-exercise-key"
   subnet_id              = module.vpc.public_subnets[0]
   vpc_security_group_ids = [aws_security_group.mongodb_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.mongodb_profile.name
@@ -116,8 +116,8 @@ module "ec2_mongodb" {
               EOF
 
   tags = {
-    Terraform   = "true"
-    Environment = "dev"
+    Terraform           = "true"
+    Environment         = "dev"
     IntentionalWeakness = "OutdatedSoftware"
   }
 }
@@ -134,8 +134,8 @@ resource "aws_key_pair" "kp" {
 }
 
 resource "local_file" "ssh_key" {
-  content  = tls_private_key.pk.private_key_pem
-  filename = "${path.module}/wiz-exercise-key.pem"
+  content         = tls_private_key.pk.private_key_pem
+  filename        = "${path.module}/wiz-exercise-key.pem"
   file_permission = "0400"
 }
 

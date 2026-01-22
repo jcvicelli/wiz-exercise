@@ -19,18 +19,18 @@ module "s3_backup_bucket" {
   }
 
   attach_policy = true
-  policy        = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Sid       = "PublicReadGetObject"
         Effect    = "Allow"
         Principal = "*"
-        Action    = [
+        Action = [
           "s3:GetObject",
           "s3:ListBucket"
         ]
-        Resource  = [
+        Resource = [
           "arn:aws:s3:::wiz-exercise-mongodb-backups-${random_id.bucket_suffix.hex}",
           "arn:aws:s3:::wiz-exercise-mongodb-backups-${random_id.bucket_suffix.hex}/*"
         ]

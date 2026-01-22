@@ -32,9 +32,9 @@ resource "aws_iam_role_policy" "mongodb_permissive_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "IntentionalWeaknessEC2FullControl"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "IntentionalWeaknessEC2FullControl"
+        Effect = "Allow"
+        Action = [
           "ec2:RunInstances",
           "ec2:CreateVolume",
           "ec2:AttachVolume",
@@ -43,9 +43,9 @@ resource "aws_iam_role_policy" "mongodb_permissive_policy" {
         Resource = "*"
       },
       {
-        Sid      = "BackupWriteAccess"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "BackupWriteAccess"
+        Effect = "Allow"
+        Action = [
           "s3:PutObject",
           "s3:ListBucket"
         ]
@@ -55,9 +55,9 @@ resource "aws_iam_role_policy" "mongodb_permissive_policy" {
         ]
       },
       {
-        Sid      = "SecretsAccess"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "SecretsAccess"
+        Effect = "Allow"
+        Action = [
           "secretsmanager:GetSecretValue"
         ]
         Resource = aws_secretsmanager_secret.mongodb_auth.arn

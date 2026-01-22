@@ -98,7 +98,7 @@ resource "aws_iam_policy" "lb_controller" {
         Resource = "arn:aws:ec2:*:*:security-group/*"
         Condition = {
           Null = {
-            "aws:RequestTag/elbv2.k8s.aws/cluster" = "true"
+            "aws:RequestTag/elbv2.k8s.aws/cluster"  = "true"
             "aws:ResourceTag/elbv2.k8s.aws/cluster" = "false"
           }
         }
@@ -153,7 +153,7 @@ resource "aws_iam_policy" "lb_controller" {
         ]
         Condition = {
           Null = {
-            "aws:RequestTag/elbv2.k8s.aws/cluster" = "true"
+            "aws:RequestTag/elbv2.k8s.aws/cluster"  = "true"
             "aws:ResourceTag/elbv2.k8s.aws/cluster" = "false"
           }
         }

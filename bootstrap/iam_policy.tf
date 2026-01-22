@@ -124,44 +124,44 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         Sid    = "LoadBalancing"
         Effect = "Allow"
         Action = [
-            "elasticloadbalancing:*"
+          "elasticloadbalancing:*"
         ]
         Resource = "*"
         Condition = {
-            StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
         }
       },
       {
-         Sid = "SecretManagement"
-         Effect = "Allow"
-         Action = [
-            "secretsmanager:GetSecretValue",
-            "secretsmanager:DescribeSecret",
-            "secretsmanager:CreateSecret",
-            "secretsmanager:DeleteSecret",
-            "secretsmanager:PutSecretValue"
-         ]
-         Resource = "*"
-         Condition = {
-            StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
-         }
-      },
-      {
-        Sid = "KMS"
+        Sid    = "SecretManagement"
         Effect = "Allow"
         Action = [
-            "kms:CreateKey",
-            "kms:DescribeKey",
-            "kms:ListAliases",
-            "kms:CreateAlias",
-            "kms:DeleteAlias",
-            "kms:ScheduleKeyDeletion",
-            "kms:GenerateDataKey",
-            "kms:Decrypt"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:PutSecretValue"
         ]
         Resource = "*"
         Condition = {
-            StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+        }
+      },
+      {
+        Sid    = "KMS"
+        Effect = "Allow"
+        Action = [
+          "kms:CreateKey",
+          "kms:DescribeKey",
+          "kms:ListAliases",
+          "kms:CreateAlias",
+          "kms:DeleteAlias",
+          "kms:ScheduleKeyDeletion",
+          "kms:GenerateDataKey",
+          "kms:Decrypt"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
         }
       }
     ]

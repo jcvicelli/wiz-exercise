@@ -17,11 +17,11 @@ module "vpc" {
   enable_dns_support   = true
 
   # VPC Flow Logs (Detective Control)
-  enable_flow_log                      = true
-  create_flow_log_cloudwatch_log_group = true
-  create_flow_log_cloudwatch_iam_role  = true
-  flow_log_traffic_type                = "ALL"
-  flow_log_max_aggregation_interval    = 60
+  enable_flow_log                                 = true
+  create_flow_log_cloudwatch_log_group            = true
+  create_flow_log_cloudwatch_iam_role             = true
+  flow_log_traffic_type                           = "ALL"
+  flow_log_max_aggregation_interval               = 60
   flow_log_cloudwatch_log_group_retention_in_days = 7
 
   tags = {
