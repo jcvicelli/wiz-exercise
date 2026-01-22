@@ -53,6 +53,14 @@ resource "aws_iam_role_policy" "mongodb_permissive_policy" {
           module.s3_backup_bucket.s3_bucket_arn,
           "${module.s3_backup_bucket.s3_bucket_arn}/*"
         ]
+      },
+      {
+        Sid      = "SecretsAccess"
+        Effect   = "Allow"
+        Action   = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.mongodb_auth.arn
       }
     ]
   })

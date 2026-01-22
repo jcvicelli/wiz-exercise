@@ -58,21 +58,24 @@ module "ec2_mongodb" {
 
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t3.small"
-  key_name               = "wiz-exercise-key" # Assuming key pair exists or needs creation?
-                                              # Implementation plan says "DescribeKeyPairs" is allowed.
-                                              # But usually we need to upload a public key.
-                                              # For automation without user input, maybe skip key or generate one?
-                                              # Plan says "CreateKeyPair" is allowed.
-                                              # I will generate a key pair for the user to download if needed or just use one.
-                                              # Actually, for the exercise, I should probably create a tls_private_key and aws_key_pair.
+  key_name               = "wiz-exercise-key" 
   subnet_id              = module.vpc.public_subnets[0]
   vpc_security_group_ids = [aws_security_group.mongodb_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.mongodb_profile.name
 
-  user_data = <<-"EOF"
+  user_data = <<-EOF
               #!/bin/bash
               set -e
               
+              # Install dependencies
+              apt-get update
+              apt-get install -y unzip jq
+              
+              # Install AWS CLI v2
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip awscliv2.zip
+              ./aws/install
+
               # Install MongoDB 4.4 (Outdated)
               curl -fsSL https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
               echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
@@ -88,10 +91,6 @@ module "ec2_mongodb" {
 
               # Configure MongoDB to listen on all interfaces
               sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
-
-              # Enable Auth
-              # sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
-              # We need to add user first before enabling auth otherwise we lock ourselves out
               
               systemctl start mongod
               systemctl enable mongod
@@ -99,9 +98,15 @@ module "ec2_mongodb" {
               # Wait for startup
               sleep 10
 
+              # Fetch Secrets
+              SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id ${aws_secretsmanager_secret.mongodb_auth.name} --region eu-central-1 --query SecretString --output text)
+              ADMIN_PWD=$(echo $SECRET_JSON | jq -r .admin_password)
+              APP_PWD=$(echo $SECRET_JSON | jq -r .password)
+              APP_USER=$(echo $SECRET_JSON | jq -r .username)
+
               # Create Users
-              mongo admin --eval 'db.createUser({user: "admin", pwd: "AdminPassword2025!", roles: [{role: "userAdminAnyDatabase", db: "admin"}, "readWriteAnyDatabase"]})'
-              mongo tododb --eval 'db.createUser({user: "todoapp", pwd: "TodoApp2025!", roles: [{role: "readWrite", db: "tododb"}]})'
+              mongo admin --eval "db.createUser({user: 'admin', pwd: '$ADMIN_PWD', roles: [{role: 'userAdminAnyDatabase', db: 'admin'}, 'readWriteAnyDatabase']})"
+              mongo tododb --eval "db.createUser({user: '$APP_USER', pwd: '$APP_PWD', roles: [{role: 'readWrite', db: 'tododb'}]})"
 
               # Enable Auth and restart
               echo "security:

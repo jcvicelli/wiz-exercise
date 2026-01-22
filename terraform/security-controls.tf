@@ -49,6 +49,43 @@ resource "aws_cloudtrail" "main" {
 
 # --- AWS Config (Detective Control) ---
 
+resource "aws_s3_bucket" "config_logs" {
+  bucket        = "wiz-exercise-config-logs-${random_id.bucket_suffix.hex}"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_policy" "config_policy" {
+  bucket = aws_s3_bucket.config_logs.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AWSConfigAclCheck"
+        Effect = "Allow"
+        Principal = {
+          Service = "config.amazonaws.com"
+        }
+        Action   = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.config_logs.arn
+      },
+      {
+        Sid    = "AWSConfigWrite"
+        Effect = "Allow"
+        Principal = {
+          Service = "config.amazonaws.com"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.config_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "config_role" {
   name = "aws-config-role"
 
@@ -89,7 +126,7 @@ resource "aws_config_configuration_recorder_status" "main" {
 
 resource "aws_config_delivery_channel" "main" {
   name           = "wiz-exercise-delivery-channel"
-  s3_bucket_name = aws_s3_bucket.cloudtrail_logs.id # Reusing same bucket for simplicity
+  s3_bucket_name = aws_s3_bucket.config_logs.id
   depends_on     = [aws_config_configuration_recorder.main]
 }
 
