@@ -78,7 +78,7 @@ jobs:
 
       - name: Deploy to EKS
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.registry }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           # 1. Get infrastructure info
           # 1. Get MongoDB Private IP
@@ -111,7 +111,12 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
           # 4. Replace placeholders
-          sed -i "s/AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/${ECR_REGISTRY}/g" k8s/deployment.yaml
+          #
+          # Fix: Use | instead of / to avoid URI conflicts
+          sed -i "s|AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com|${ECR_REGISTRY}|g" k8s/deployment.yaml
+          # Ensure you also tag with the specific SHA instead of just 'latest' for better tracking
+          sed -i "s|:latest|:${{ github.sha }}|g" k8s/deployment.yaml
+
           sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/mongodb-external.yaml
           sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/networkpolicy.yaml
 
