@@ -1,11 +1,11 @@
-name: 'Application'
+name: "Application"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - 'app/**'
-      - 'k8s/**'
+      - "app/**"
+      - "k8s/**"
 
 permissions:
   id-token: write
@@ -14,104 +14,104 @@ permissions:
 
 jobs:
   build-and-deploy:
-    name: 'Build and Deploy'
+    name: "Build and Deploy"
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Run Gosec Security Scanner
-      uses: securego/gosec@master
-      with:
-        args: ./app/...
-      continue-on-error: true
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./app/...
+        continue-on-error: true
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsProvisionerRole
-        aws-region: eu-central-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsProvisionerRole
+          aws-region: eu-central-1
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build Docker image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.registry }}
-        ECR_REPOSITORY: wiz-exercise-todo-app
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./app/tasky-main
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.registry }}
+          ECR_REPOSITORY: wiz-exercise-todo-app
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./app/tasky-main
 
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ steps.login-ecr.registry }}/wiz-exercise-todo-app:${{ github.sha }}
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        severity: 'CRITICAL,HIGH'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.registry }}/wiz-exercise-todo-app:${{ github.sha }}
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
 
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
 
-    - name: Push Docker image to Amazon ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.registry }}
-        ECR_REPOSITORY: wiz-exercise-todo-app
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      - name: Push Docker image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.registry }}
+          ECR_REPOSITORY: wiz-exercise-todo-app
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-    - name: Install kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: 'latest'
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "latest"
 
-    - name: Update Kubeconfig
-      run: aws eks update-kubeconfig --name wiz-exercise-eks --region eu-central-1
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --name wiz-exercise-eks --region eu-central-1
 
-    - name: Deploy to EKS
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.registry }}
-      run: |
-        # Get MongoDB Private IP from EC2
-        MONGODB_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=wiz-exercise-mongodb" "Name=instance-state-name,Values=running" --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
-        
-        # Get MongoDB Password from Secrets Manager
-        SECRET_NAME=$(aws secretsmanager list-secrets --query "SecretList[?starts_with(Name, 'wiz-exercise/mongodb-auth')].Name" --output text | cut -f1)
-        SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --query SecretString --output text)
-        MONGODB_PASSWORD=$(echo "$SECRET_JSON" | jq -r .password)
-        
-        # Create/Update Kubernetes Secret
-        kubectl create secret generic mongodb-secret \
-          --namespace wiz-exercise \
-          --from-literal=password="$MONGODB_PASSWORD" \
-          --from-literal=uri="mongodb://todoapp:$MONGODB_PASSWORD@mongodb-external:27017/tododb" \
-          --dry-run=client -o yaml | kubectl apply -f -
+      - name: Deploy to EKS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.registry }}
+        run: |
+          # Get MongoDB Private IP from EC2
+          MONGODB_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=wiz-exercise-mongodb" "Name=instance-state-name,Values=running" --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
 
-        # Replace placeholders in manifests
-        sed -i "s/AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/${ECR_REGISTRY}/g" k8s/deployment.yaml
-        sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/mongodb-external.yaml
-        sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/networkpolicy.yaml
-        
-        # Apply manifests
-        kubectl apply -f k8s/namespace.yaml
-        kubectl apply -f k8s/serviceaccount.yaml
-        kubectl apply -f k8s/clusterrolebinding.yaml
-        kubectl apply -f k8s/service.yaml
-        kubectl apply -f k8s/ingress.yaml
-        kubectl apply -f k8s/mongodb-external.yaml
-        kubectl apply -f k8s/networkpolicy.yaml
-        kubectl apply -f k8s/pdb.yaml
-        kubectl apply -f k8s/deployment.yaml
-        
-        # Verify Deployment
-        kubectl rollout status deployment/todo-app -n wiz-exercise --timeout=5m
-        kubectl get pods -n wiz-exercise
-        echo "Application Load Balancer Endpoint:"
-        kubectl get ingress -n wiz-exercise -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}'
+          # Get MongoDB Password from Secrets Manager
+          SECRET_NAME=$(aws secretsmanager list-secrets --query "SecretList[?starts_with(Name, 'wiz-exercise/mongodb-auth')].Name" --output text | cut -f1)
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --query SecretString --output text)
+          MONGODB_PASSWORD=$(echo "$SECRET_JSON" | jq -r .password)
+
+          # Create/Update Kubernetes Secret
+          kubectl create secret generic mongodb-secret \
+            --namespace wiz-exercise \
+            --from-literal=password="$MONGODB_PASSWORD" \
+            --from-literal=uri="mongodb://todoapp:$MONGODB_PASSWORD@mongodb-external:27017/tododb" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # Replace placeholders in manifests
+          sed -i "s/AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/${ECR_REGISTRY}/g" k8s/deployment.yaml
+          sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/mongodb-external.yaml
+          sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/networkpolicy.yaml
+
+          # Apply manifests
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/serviceaccount.yaml
+          kubectl apply -f k8s/clusterrolebinding.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/mongodb-external.yaml
+          kubectl apply -f k8s/networkpolicy.yaml
+          kubectl apply -f k8s/pdb.yaml
+          kubectl apply -f k8s/deployment.yaml
+
+          # Verify Deployment
+          kubectl rollout status deployment/todo-app -n wiz-exercise --timeout=5m
+          kubectl get pods -n wiz-exercise
+          echo "Application Load Balancer Endpoint:"
+          kubectl get ingress -n wiz-exercise -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}'

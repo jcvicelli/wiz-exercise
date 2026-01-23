@@ -139,7 +139,19 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
           "secretsmanager:DescribeSecret",
           "secretsmanager:CreateSecret",
           "secretsmanager:DeleteSecret",
-          "secretsmanager:PutSecretValue"
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:ListSecrets"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+        }
+      },
+      {
+        Sid    = "CloudTrail"
+        Effect = "Allow"
+        Action = [
+          "cloudtrail:*"
         ]
         Resource = "*"
         Condition = {
