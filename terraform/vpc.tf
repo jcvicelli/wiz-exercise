@@ -9,6 +9,17 @@ module "vpc" {
   private_subnets = var.private_subnets
   public_subnets  = var.public_subnets
 
+  public_subnet_tags = {
+    "kubernetes.io/role/elb"                 = "1"
+    "kubernetes.io/cluster/wiz-exercise-eks" = "shared"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb"        = "1"
+    "kubernetes.io/cluster/wiz-exercise-eks" = "shared"
+  }
+
+
   enable_nat_gateway = true
   single_nat_gateway = true # Cost optimization for exercise
 
