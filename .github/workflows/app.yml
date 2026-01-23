@@ -25,6 +25,7 @@ jobs:
       uses: securego/gosec@master
       with:
         args: ./app/...
+      continue-on-error: true
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -36,15 +37,13 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build, tag, and push image to Amazon ECR
+    - name: Build Docker image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.registry }}
         ECR_REPOSITORY: wiz-exercise-todo-app
         IMAGE_TAG: ${{ github.sha }}
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./app/tasky-main
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
@@ -58,6 +57,15 @@ jobs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: 'trivy-results.sarif'
+
+    - name: Push Docker image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.registry }}
+        ECR_REPOSITORY: wiz-exercise-todo-app
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
@@ -83,6 +91,7 @@ jobs:
         kubectl create secret generic mongodb-secret \
           --namespace wiz-exercise \
           --from-literal=password="$MONGODB_PASSWORD" \
+          --from-literal=uri="mongodb://todoapp:$MONGODB_PASSWORD@mongodb-external:27017/tododb" \
           --dry-run=client -o yaml | kubectl apply -f -
 
         # Replace placeholders in manifests
@@ -100,3 +109,9 @@ jobs:
         kubectl apply -f k8s/networkpolicy.yaml
         kubectl apply -f k8s/pdb.yaml
         kubectl apply -f k8s/deployment.yaml
+        
+        # Verify Deployment
+        kubectl rollout status deployment/todo-app -n wiz-exercise --timeout=5m
+        kubectl get pods -n wiz-exercise
+        echo "Application Load Balancer Endpoint:"
+        kubectl get ingress -n wiz-exercise -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}'

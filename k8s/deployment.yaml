@@ -29,7 +29,10 @@ spec:
               name: mongodb-secret
               key: password
         - name: MONGODB_URI
-          value: "mongodb://todoapp:$(MONGODB_PASSWORD)@mongodb-external:27017/tododb"
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: uri
         resources:
           limits:
             cpu: "500m"
