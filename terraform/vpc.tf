@@ -5,7 +5,7 @@ module "vpc" {
   name = "wiz-exercise-vpc"
   cidr = var.vpc_cidr
 
-  azs             = ["eu-central-1a", "eu-central-1b"]
+  azs             = ["us-west-2a", "us-west-2b"]
   private_subnets = var.private_subnets
   public_subnets  = var.public_subnets
 

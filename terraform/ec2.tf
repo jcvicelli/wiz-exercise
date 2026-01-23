@@ -99,7 +99,7 @@ module "ec2_mongodb" {
               sleep 10
 
               # Fetch Secrets
-              SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id ${aws_secretsmanager_secret.mongodb_auth.name} --region eu-central-1 --query SecretString --output text)
+              SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id ${aws_secretsmanager_secret.mongodb_auth.name} --region us-west-2 --query SecretString --output text)
               ADMIN_PWD=$(echo $SECRET_JSON | jq -r .admin_password)
               APP_PWD=$(echo $SECRET_JSON | jq -r .password)
               APP_USER=$(echo $SECRET_JSON | jq -r .username)

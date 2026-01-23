@@ -8,7 +8,7 @@
 
 ## Core Project Details
 - Repository: jcvicelli/wiz-exercise
-- Region: eu-central-1 (Frankfurt)
+- Region: us-west-2 (Frankfurt)
 - Terraform: v1.10+
 - AWS Provider: v6.0+
 
@@ -20,3 +20,5 @@
 - Intentional Weaknesses: Public S3 bucket & MongoDB on Public EC2 for Wiz discovery.
 
 ## Todos
+change code to Supported Regions:
+us-west-2 (Oregon)

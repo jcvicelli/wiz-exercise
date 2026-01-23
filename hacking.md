@@ -89,7 +89,7 @@ kubectl exec -it <pod-name> -- nc -zv <mongodb-ec2-ip> 27017
 * **Public S3 Access:**
 ```bash
 # Demonstrate the bucket is open (Intentional Weakness)
-curl https://<bucket-name>.s3.eu-central-1.amazonaws.com/backup.zip -o backup.zip
+curl https://<bucket-name>.s3.us-west-2.amazonaws.com/backup.zip -o backup.zip
 
 ```
 
@@ -173,6 +173,6 @@ kubectl get secrets --all-namespaces
 1. **Act as an Unauthenticated Attacker:**
 ```bash
 # Download sensitive data from the misconfigured bucket
-wget http://<bucket-name>.s3.eu-central-1.amazonaws.com/customer_list.csv
+wget http://<bucket-name>.s3.us-west-2.amazonaws.com/customer_list.csv
 
 ```

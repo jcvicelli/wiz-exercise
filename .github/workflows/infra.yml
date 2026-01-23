@@ -1,14 +1,14 @@
-name: 'Infrastructure'
+name: "Infrastructure"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - 'terraform/**'
+      - "terraform/**"
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - 'terraform/**'
+      - "terraform/**"
 
 permissions:
   id-token: write
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   terraform:
-    name: 'Terraform'
+    name: "Terraform"
     runs-on: ubuntu-latest
     environment: production
 
@@ -25,31 +25,31 @@ jobs:
         working-directory: ./terraform
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsProvisionerRole
-        aws-region: eu-central-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsProvisionerRole
+          aws-region: us-west-2
 
-    - name: Run Checkov
-      uses: bridgecrewio/checkov-action@master
-      with:
-        directory: terraform/
-        soft_fail: true # Set to true to allow pipeline to continue even with findings (for demo)
-        framework: terraform
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform/
+          soft_fail: true # Set to true to allow pipeline to continue even with findings (for demo)
+          framework: terraform
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Plan
-      run: terraform plan -input=false
+      - name: Terraform Plan
+        run: terraform plan -input=false
 
-    - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      run: terraform apply -auto-approve -input=false
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false

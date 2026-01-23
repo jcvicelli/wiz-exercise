@@ -20,7 +20,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -34,7 +34,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -49,7 +49,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -73,7 +73,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -104,7 +104,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -117,7 +117,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -128,7 +128,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -144,7 +144,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -155,7 +155,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       },
       {
@@ -173,7 +173,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = { "aws:RequestedRegion" : "eu-central-1" }
+          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
         }
       }
     ]

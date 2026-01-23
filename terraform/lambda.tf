@@ -50,8 +50,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "ssm:SendCommand"
         ]
         Resource = [
-          "arn:aws:ec2:eu-central-1:${data.aws_caller_identity.current.account_id}:instance/${module.ec2_mongodb.id}",
-          "arn:aws:ssm:eu-central-1:*:document/AWS-RunShellScript"
+          "arn:aws:ec2:us-west-2:${data.aws_caller_identity.current.account_id}:instance/${module.ec2_mongodb.id}",
+          "arn:aws:ssm:us-west-2:*:document/AWS-RunShellScript"
         ]
       },
       {
