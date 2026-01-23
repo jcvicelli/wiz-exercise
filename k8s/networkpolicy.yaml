@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: todo-app-policy
+  namespace: wiz-exercise
+spec:
+  podSelector:
+    matchLabels:
+      app: todo-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  - to:
+    - ipBlock:
+        cidr: MONGODB_HOST_IP/32
+    ports:
+    - protocol: TCP
+      port: 27017

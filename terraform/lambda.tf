@@ -60,6 +60,13 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "s3:PutObject"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.mongodb_auth.arn
       }
     ]
   })
@@ -78,6 +85,7 @@ resource "aws_lambda_function" "backup_lambda" {
   environment {
     variables = {
       BACKUP_BUCKET = module.s3_backup_bucket.s3_bucket_id
+      SECRET_NAME   = aws_secretsmanager_secret.mongodb_auth.name
     }
   }
 }

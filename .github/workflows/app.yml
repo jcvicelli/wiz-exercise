@@ -59,6 +59,11 @@ jobs:
       with:
         sarif_file: 'trivy-results.sarif'
 
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
     - name: Update Kubeconfig
       run: aws eks update-kubeconfig --name wiz-exercise-eks --region eu-central-1
 
@@ -69,9 +74,21 @@ jobs:
         # Get MongoDB Private IP from EC2
         MONGODB_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=wiz-exercise-mongodb" "Name=instance-state-name,Values=running" --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
         
+        # Get MongoDB Password from Secrets Manager
+        SECRET_NAME=$(aws secretsmanager list-secrets --query "SecretList[?starts_with(Name, 'wiz-exercise/mongodb-auth')].Name" --output text | cut -f1)
+        SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --query SecretString --output text)
+        MONGODB_PASSWORD=$(echo "$SECRET_JSON" | jq -r .password)
+        
+        # Create/Update Kubernetes Secret
+        kubectl create secret generic mongodb-secret \
+          --namespace wiz-exercise \
+          --from-literal=password="$MONGODB_PASSWORD" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
         # Replace placeholders in manifests
         sed -i "s/AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/${ECR_REGISTRY}/g" k8s/deployment.yaml
         sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/mongodb-external.yaml
+        sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/networkpolicy.yaml
         
         # Apply manifests
         kubectl apply -f k8s/namespace.yaml
@@ -80,4 +97,6 @@ jobs:
         kubectl apply -f k8s/service.yaml
         kubectl apply -f k8s/ingress.yaml
         kubectl apply -f k8s/mongodb-external.yaml
+        kubectl apply -f k8s/networkpolicy.yaml
+        kubectl apply -f k8s/pdb.yaml
         kubectl apply -f k8s/deployment.yaml
