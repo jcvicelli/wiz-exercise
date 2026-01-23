@@ -172,7 +172,7 @@ resource "aws_config_config_rule" "ec2_ssm_managed" {
 
   source {
     owner             = "AWS"
-    source_identifier = "EC2_INSTANCE_MANAGED_BY_SYSTEMS_MANAGER"
+    source_identifier = "EC2_INSTANCE_MANAGED_BY_SSM"
   }
 
   depends_on = [aws_config_configuration_recorder.main]

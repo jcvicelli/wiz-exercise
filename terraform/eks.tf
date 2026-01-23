@@ -3,7 +3,7 @@ module "eks" {
   version = "~> 20.0"
 
   cluster_name    = "wiz-exercise-eks"
-  cluster_version = "1.34"
+  cluster_version = "1.32"
 
   cluster_endpoint_public_access = true
 
@@ -33,7 +33,7 @@ module "eks" {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/GitHubActionsProvisionerRole"
       policy_associations = {
         admin = {
-          policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterAdminPolicy"
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = {
             type = "cluster"
           }

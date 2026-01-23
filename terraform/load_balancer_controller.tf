@@ -68,13 +68,7 @@ resource "aws_iam_policy" "lb_controller" {
           "waf-regional:AssociateWebACL",
           "waf-regional:DisassociateWebACL",
           "wafv2:GetWebACL",
-          "wafv2:GetWebACLForResource",{
-              Version = "2012-10-17"
-              Statement = [
-                
-          
-              ]
-            }
+          "wafv2:GetWebACLForResource",
           "wafv2:AssociateWebACL",
           "wafv2:DisassociateWebACL",
           "shield:GetSubscriptionState",
