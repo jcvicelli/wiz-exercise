@@ -129,3 +129,27 @@ jobs:
           kubectl apply -f k8s/pdb.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/ingress.yaml
+
+      - name: Verify Deployment
+        run: |
+          # Wait for deployment to be ready
+          kubectl rollout status deployment/todo-app -n wiz-exercise --timeout=5m
+
+          # Show pod status
+          kubectl get pods -n wiz-exercise
+
+          # Show service and ingress
+          kubectl get svc,ingress -n wiz-exercise
+
+      - name: Get Application URL
+        run: |
+          echo "Waiting for ALB to be provisioned (this may take 2-3 minutes)..."
+          sleep 120
+
+          ALB_URL=$(kubectl get ingress todo-app-ingress -n wiz-exercise -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+          if [ -z "$ALB_URL" ]; then
+            echo "⚠️  ALB not ready yet. Check ingress status with: kubectl describe ingress -n wiz-exercise"
+          else
+            echo "✅ Application available at: http://$ALB_URL"
+          fi
