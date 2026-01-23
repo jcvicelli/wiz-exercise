@@ -4,3 +4,5 @@ Using LLM to bootstrap:
 - insisted in saving audit logs in the backup bucket
 - Outdate versions of resources (terraform, k8s, for example)
 -
+First big terraform apply done manually, github actions didn't like it
+Terraform 

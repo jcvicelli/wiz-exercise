@@ -3,7 +3,7 @@ module "eks" {
   version = "~> 20.0"
 
   cluster_name    = "wiz-exercise-eks"
-  cluster_version = "1.31"
+  cluster_version = "1.34"
 
   cluster_endpoint_public_access = true
 

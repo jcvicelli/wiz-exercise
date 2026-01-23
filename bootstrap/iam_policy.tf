@@ -30,6 +30,12 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
           "ec2:RunInstances", "ec2:TerminateInstances", "ec2:StopInstances", "ec2:StartInstances", "ec2:DescribeInstances", "ec2:DescribeInstanceTypes", "ec2:DescribeInstanceAttribute", "ec2:ModifyInstanceAttribute",
           "ec2:CreateKeyPair", "ec2:DeleteKeyPair", "ec2:DescribeKeyPairs", "ec2:ImportKeyPair",
           "ec2:DescribeImages",
+
+
+
+
+
+
           "ec2:CreateVolume", "ec2:DeleteVolume", "ec2:AttachVolume", "ec2:DetachVolume", "ec2:DescribeVolumes"
         ]
         Resource = "*"
@@ -178,4 +184,29 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
       }
     ]
   })
+}
+
+resource "aws_iam_policy" "terraform_lock_policy" {
+  name        = "TerraformLockPolicy"
+  description = "Allows GitHub Actions to manage Terraform lock table"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_lock_policy" {
+  role       = aws_iam_role.github_actions_role.name
+  policy_arn = aws_iam_policy.terraform_lock_policy.arn
 }
