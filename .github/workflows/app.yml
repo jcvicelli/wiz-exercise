@@ -6,6 +6,7 @@ on:
     paths:
       - "app/**"
       - "k8s/**"
+      - ".github/**"
 
 permissions:
   id-token: write
