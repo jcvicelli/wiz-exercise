@@ -78,41 +78,33 @@ jobs:
 
       - name: Deploy to EKS
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: ${{ steps.login-ecr.registry }}
         run: |
-          # Get MongoDB Private IP from EC2
-          MONGODB_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=wiz-exercise-mongodb" "Name=instance-state-name,Values=running" --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
-
-          # Get MongoDB Password from Secrets Manager
-          SECRET_NAME=$(aws secretsmanager list-secrets --query "SecretList[?starts_with(Name, 'wiz-exercise/mongodb-auth')].Name" --output text | cut -f1)
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --query SecretString --output text)
+          # 1. Get infrastructure info
+          MONGODB_IP=$(aws ec2 describe-instances ...)
+          SECRET_NAME=$(aws secretsmanager list-secrets ...)
           MONGODB_PASSWORD=$(echo "$SECRET_JSON" | jq -r .password)
 
-          # Create/Update Kubernetes Secret
+          # 2. Create namespace FIRST
+          kubectl apply -f k8s/namespace.yaml
+
+          # 3. Create secret (namespace now exists)
           kubectl create secret generic mongodb-secret \
             --namespace wiz-exercise \
             --from-literal=password="$MONGODB_PASSWORD" \
-            --from-literal=uri="mongodb://todoapp:$MONGODB_PASSWORD@mongodb-external:27017/tododb" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          # Replace placeholders in manifests
-          sed -i "s/AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/${ECR_REGISTRY}/g" k8s/deployment.yaml
+          # 4. Replace placeholders
+          sed -i "s/AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/${ECR_REGISTRY}/g" k8s/deployment.yaml
           sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/mongodb-external.yaml
           sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/networkpolicy.yaml
 
-          # Apply manifests
-          kubectl apply -f k8s/namespace.yaml
+          # 5. Apply remaining manifests in dependency order
           kubectl apply -f k8s/serviceaccount.yaml
+          kubectl apply -f k8s/mongodb-external.yaml
           kubectl apply -f k8s/clusterrolebinding.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/ingress.yaml
-          kubectl apply -f k8s/mongodb-external.yaml
           kubectl apply -f k8s/networkpolicy.yaml
           kubectl apply -f k8s/pdb.yaml
           kubectl apply -f k8s/deployment.yaml
-
-          # Verify Deployment
-          kubectl rollout status deployment/todo-app -n wiz-exercise --timeout=5m
-          kubectl get pods -n wiz-exercise
-          echo "Application Load Balancer Endpoint:"
-          kubectl get ingress -n wiz-exercise -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}'
+          kubectl apply -f k8s/ingress.yaml

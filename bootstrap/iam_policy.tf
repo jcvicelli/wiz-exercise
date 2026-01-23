@@ -75,7 +75,17 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         Effect = "Allow"
         Action = [
           "ecr:CreateRepository", "ecr:DeleteRepository", "ecr:DescribeRepositories", "ecr:ListImages", "ecr:PutImage", "ecr:BatchGetImage",
-          "ecr:PutLifecyclePolicy", "ecr:GetLifecyclePolicy", "ecr:DeleteLifecyclePolicy", "ecr:SetRepositoryPolicy", "ecr:GetRepositoryPolicy", "ecr:DeleteRepositoryPolicy"
+          "ecr:PutLifecyclePolicy", "ecr:GetLifecyclePolicy", "ecr:DeleteLifecyclePolicy", "ecr:SetRepositoryPolicy", "ecr:GetRepositoryPolicy", "ecr:DeleteRepositoryPolicy",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:DescribeImages",
+          "ecr:PutImageTagMutability",
+          "ecr:PutImageScanningConfiguration",
+          "ecr:TagResource",
+          "ecr:UntagResource"
         ]
         Resource = "*"
         Condition = {
