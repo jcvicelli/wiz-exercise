@@ -29,7 +29,7 @@ spec:
                   name: mongodb-secret
                   key: password
             - name: MONGODB_URI
-              value: "mongodb-external.wiz-exercise.svc.cluster.local"
+              value: "mongodb://mongodb-external.wiz-exercise.svc.cluster.local"
           resources:
             limits:
               cpu: "500m"
