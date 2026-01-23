@@ -81,8 +81,24 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.registry }}
         run: |
           # 1. Get infrastructure info
-          MONGODB_IP=$(aws ec2 describe-instances ...)
-          SECRET_NAME=$(aws secretsmanager list-secrets ...)
+          # 1. Get MongoDB Private IP
+          # We filter by the Name tag and ensure it's 'running' to avoid getting IPs of terminated instances.
+          MONGODB_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=wiz-exercise-mongodb" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].PrivateIpAddress" \
+            --output text)
+
+          # 2. Get MongoDB Password from Secrets Manager
+          # Secrets Manager often appends a random suffix to names in Terraform.
+          # This find-and-fetch logic ensures we get the right one.
+          SECRET_NAME=$(aws secretsmanager list-secrets \
+            --query "SecretList[?starts_with(Name, 'wiz-exercise/mongodb-auth')].Name" \
+            --output text | awk '{print $1}')
+
+          SECRET_JSON=$(aws secretsmanager get-secret-value \
+            --secret-id "$SECRET_NAME" \
+            --query SecretString --output text)
+
           MONGODB_PASSWORD=$(echo "$SECRET_JSON" | jq -r .password)
 
           # 2. Create namespace FIRST
