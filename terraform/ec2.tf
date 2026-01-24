@@ -124,11 +124,22 @@ module "ec2_mongodb" {
             APP_PWD=$(echo $SECRET_JSON | jq -r .password)
             APP_USER=$(echo $SECRET_JSON | jq -r .username)
 
+            # 1. Clear any existing security lines and add the correct block
+            sudo sed -i '/security:/d' /etc/mongod.conf
+            sudo sed -i '/authorization:/d' /etc/mongod.conf
+
+            cat <<SEC | sudo tee -a /etc/mongod.conf
+            security:
+              authorization: enabled
+            SEC
+
             # Create admin user
             mongosh admin --eval "db.createUser({user: 'admin', pwd: '$ADMIN_PWD', roles: [{role: 'userAdminAnyDatabase', db: 'admin'}, 'readWriteAnyDatabase']})"
 
             # Create application user
             mongosh tododb --eval "db.createUser({user: '$APP_USER', pwd: '$APP_PWD', roles: [{role: 'readWrite', db: 'tododb'}]})"
+            mongosh --username admin --password '$ADMIN_PWD' --authenticationDatabase admin \
+              --eval "db.getSiblingDB('tododb').grantRolesToUser('todoapp', [{ role: 'backup', db: 'admin' }])"
 
             # Enable authentication
             echo "security:" >> /etc/mongod.conf

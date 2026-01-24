@@ -9,7 +9,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         Sid    = "WriteAccessScopedToRegion"
         Effect = "Allow"
         Action = [
-          "ec2:*", "s3:*", "eks:*", "iam:*", "kms:*",
+          "ec2:*", "ecr:*", "s3:*", "eks:*", "iam:*", "kms:*",
           "dynamodb:*", "secretsmanager:*", "config:*", "events:*", "logs:*"
         ]
         Resource = "*"

@@ -20,5 +20,9 @@
 - Intentional Weaknesses: Public S3 bucket & MongoDB on Public EC2 for Wiz discovery.
 
 ## Todos
-change code to Supported Regions:
-us-west-2 (Oregon)
+
+check backup is working
+protect mongodb
+test hacking
+presentation
+check cloud trail, etc.
