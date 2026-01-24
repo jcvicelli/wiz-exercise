@@ -10,3 +10,8 @@ Terraform
 Installing SSM took a while (why not gcp moment)
 ssm plugin for aws cli not working on arch linux
 Too old mongodb also had issues
+mongodb is weird for setting pwd
+
+#
+
+not https, should fix for production

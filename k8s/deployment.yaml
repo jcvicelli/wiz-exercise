@@ -31,7 +31,7 @@ spec:
             - name: MONGODB_USER
               valueFrom:
                 secretKeyRef:
-                  name: mongodb-credentials
+                  name: mongodb-secret
                   key: username
             - name: MONGODB_URI
               value: "mongodb://$(MONGODB_USER):$(MONGODB_PASSWORD)@mongodb-external.wiz-exercise.svc.cluster.local/tododb?authSource=tododb"
