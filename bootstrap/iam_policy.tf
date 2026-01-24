@@ -175,6 +175,24 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         }
       },
       {
+        Sid    = "StateAndMetadataDiscovery"
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucketAcl",
+          "s3:GetEncryptionConfiguration",
+          "dynamodb:DescribeTable",
+          "iam:ListRolePolicies",
+          "iam:GetRole",
+          "iam:GetRolePolicy",
+          "ec2:DescribeVpcAttribute",
+          "ecr:ListTagsForResource",
+          "events:ListTagsForResource",
+          "logs:ListTagsForResource",
+          "secretsmanager:GetResourcePolicy"
+        ]
+        Resource = "*"
+      },
+      {
         Sid    = "KMS"
         Effect = "Allow"
         Action = [

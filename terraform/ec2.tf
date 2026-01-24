@@ -56,9 +56,9 @@ module "ec2_mongodb" {
 
   name = "wiz-exercise-mongodb"
 
-  ami                         = data.aws_ami.amazon_linux_2023.id
-  instance_type               = "t3.small"
-  key_name                    = "wiz-exercise-key"
+  ami           = data.aws_ami.amazon_linux_2023.id
+  instance_type = "t3.small"
+  #key_name                    = "wiz-exercise-key"
   associate_public_ip_address = true
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.mongodb_sg.id]
@@ -76,7 +76,7 @@ module "ec2_mongodb" {
   # Enforce IMDSv2
   metadata_options = {
     http_endpoint               = "enabled"
-    http_tokens                 = "optional"
+    http_tokens                 = "required"
     http_put_response_hop_limit = 1
   }
 

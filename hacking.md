@@ -66,7 +66,7 @@ curl -I <alb-dns-endpoint>
 * **Show Runtime Environment Variables:**
 ```bash
 # Verify the secret is injected from AWS Secrets Manager
-kubectl exec -it <pod-name> -- env | grep MONGO
+kubectl exec -it <pod-name> -- env 
 
 ```
 
@@ -78,6 +78,16 @@ kubectl exec -it <pod-name> -- nc -zv <mongodb-ec2-ip> 27017
 
 ```
 
+* **Verify DB data:**
+```bash
+# Login to mongodb server
+mongosh
+showdbs
+use go-mongodb
+show collections
+db.todos.find()
+
+```
 
 
 ---
