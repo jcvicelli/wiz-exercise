@@ -15,3 +15,9 @@ variable "private_subnets" {
   type        = list(string)
   default     = ["10.0.11.0/24", "10.0.12.0/24"]
 }
+
+variable "admin_user_name" {
+  description = "IAM username to grant cluster admin permissions"
+  type        = string
+  default     = ""
+}

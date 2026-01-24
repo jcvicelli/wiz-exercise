@@ -15,11 +15,9 @@ permissions:
   contents: read
 
 jobs:
-  terraform:
-    name: "Terraform"
+  plan:
+    name: "Terraform Plan"
     runs-on: ubuntu-latest
-    environment: production
-
     defaults:
       run:
         working-directory: ./terraform
@@ -41,15 +39,55 @@ jobs:
         uses: bridgecrewio/checkov-action@master
         with:
           directory: terraform/
-          soft_fail: true # Set to true to allow pipeline to continue even with findings (for demo)
+          soft_fail: true
           framework: terraform
 
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Plan
-        run: terraform plan -input=false
+        id: plan
+        run: terraform plan -input=false -out=tfplan
+        env:
+          TF_VAR_admin_user_name: ${{ secrets.ADMIN_USER_NAME }}
+
+      - name: Upload Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/tfplan
+
+  apply:
+    name: "Terraform Apply"
+    needs: plan
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsProvisionerRole
+          aws-region: us-west-2
+
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/
+
+      - name: Terraform Init
+        run: terraform init
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -auto-approve tfplan
