@@ -1,10 +1,10 @@
-data "aws_ami" "ubuntu" {
+data "aws_ami" "amazon_linux_2023" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical
+  owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["al2023-ami-*-x86_64"]
   }
 
   filter {
@@ -56,64 +56,87 @@ module "ec2_mongodb" {
 
   name = "wiz-exercise-mongodb"
 
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.small"
-  key_name               = "wiz-exercise-key"
-  subnet_id              = module.vpc.public_subnets[0]
-  vpc_security_group_ids = [aws_security_group.mongodb_sg.id]
-  iam_instance_profile   = aws_iam_instance_profile.mongodb_profile.name
+  ami                         = data.aws_ami.amazon_linux_2023.id
+  instance_type               = "t3.small"
+  key_name                    = "wiz-exercise-key"
+  associate_public_ip_address = true
+  subnet_id                   = module.vpc.public_subnets[0]
+  vpc_security_group_ids      = [aws_security_group.mongodb_sg.id]
+  iam_instance_profile        = aws_iam_instance_profile.mongodb_profile.name
+  user_data_replace_on_change = false
+
+  root_block_device = [
+    {
+      volume_type = "gp3"
+      volume_size = 50
+      encrypted   = true
+    }
+  ]
+
+  # Enforce IMDSv2
+  metadata_options = {
+    http_endpoint               = "enabled"
+    http_tokens                 = "optional"
+    http_put_response_hop_limit = 1
+  }
 
   user_data = <<-EOF
-              #!/bin/bash
-              set -e
-              
-              # Install dependencies
-              apt-get update
-              apt-get install -y unzip jq
-              
-              # Install AWS CLI v2
-              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-              unzip awscliv2.zip
-              ./aws/install
+            #!/bin/bash
+            set -e
 
-              # Install MongoDB 4.4 (Outdated)
-              curl -fsSL https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
-              echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
-              apt-get update
-              apt-get install -y mongodb-org=4.4.18 mongodb-org-server=4.4.18 mongodb-org-shell=4.4.18 mongodb-org-mongos=4.4.18 mongodb-org-tools=4.4.18
-              
-              # Hold package versions
-              echo "mongodb-org hold" | sudo dpkg --set-selections
-              echo "mongodb-org-server hold" | sudo dpkg --set-selections
-              echo "mongodb-org-shell hold" | sudo dpkg --set-selections
-              echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
-              echo "mongodb-org-tools hold" | sudo dpkg --set-selections
+            # Update system
+            dnf update -y
 
-              # Configure MongoDB to listen on all interfaces
-              sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
-              
-              systemctl start mongod
-              systemctl enable mongod
+            # Install required packages
+            dnf install -y jq
 
-              # Wait for startup
-              sleep 10
+            # Istall ssm agent
+            sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+            sudo systemctl enable amazon-ssm-agent
+            sudo systemctl start amazon-ssm-agent
 
-              # Fetch Secrets
-              SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id ${aws_secretsmanager_secret.mongodb_auth.name} --region us-west-2 --query SecretString --output text)
-              ADMIN_PWD=$(echo $SECRET_JSON | jq -r .admin_password)
-              APP_PWD=$(echo $SECRET_JSON | jq -r .password)
-              APP_USER=$(echo $SECRET_JSON | jq -r .username)
+            # Add MongoDB repository
+            cat <<REPO | sudo tee /etc/yum.repos.d/mongodb-org-7.0.repo
+            [mongodb-org-7.0]
+            name=MongoDB Repository
+            baseurl=https://repo.mongodb.org/yum/amazon/2023/mongodb-org/7.0/x86_64/
+            gpgcheck=1
+            enabled=1
+            gpgkey=https://pgp.mongodb.com/server-7.0.asc
+            REPO
 
-              # Create Users
-              mongo admin --eval "db.createUser({user: 'admin', pwd: '$ADMIN_PWD', roles: [{role: 'userAdminAnyDatabase', db: 'admin'}, 'readWriteAnyDatabase']})"
-              mongo tododb --eval "db.createUser({user: '$APP_USER', pwd: '$APP_PWD', roles: [{role: 'readWrite', db: 'tododb'}]})"
+            # Install MongoDB
+            sudo dnf install -y mongodb-org
 
-              # Enable Auth and restart
-              echo "security:
-                authorization: enabled" >> /etc/mongod.conf
-              
-              systemctl restart mongod
-              EOF
+            # Configure MongoDB to listen on all interfaces
+            sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
+
+            # Start MongoDB
+            systemctl start mongod
+            systemctl enable mongod
+
+            # Wait for MongoDB to be ready
+            sleep 10
+
+            # Fetch credentials from Secrets Manager
+            SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id ${aws_secretsmanager_secret.mongodb_auth.name} --region eu-central-1 --query SecretString --output text)
+            ADMIN_PWD=$(echo $SECRET_JSON | jq -r .admin_password)
+            APP_PWD=$(echo $SECRET_JSON | jq -r .password)
+            APP_USER=$(echo $SECRET_JSON | jq -r .username)
+
+            # Create admin user
+            mongosh admin --eval "db.createUser({user: 'admin', pwd: '$ADMIN_PWD', roles: [{role: 'userAdminAnyDatabase', db: 'admin'}, 'readWriteAnyDatabase']})"
+
+            # Create application user
+            mongosh tododb --eval "db.createUser({user: '$APP_USER', pwd: '$APP_PWD', roles: [{role: 'readWrite', db: 'tododb'}]})"
+
+            # Enable authentication
+            echo "security:" >> /etc/mongod.conf
+            echo "  authorization: enabled" >> /etc/mongod.conf
+
+            # Restart MongoDB with authentication
+            systemctl restart mongod
+          EOF
 
   tags = {
     Terraform           = "true"

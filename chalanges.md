@@ -6,3 +6,7 @@ Using LLM to bootstrap:
 -
 First big terraform apply done manually, github actions didn't like it
 Terraform 
+
+Installing SSM took a while (why not gcp moment)
+ssm plugin for aws cli not working on arch linux
+Too old mongodb also had issues
