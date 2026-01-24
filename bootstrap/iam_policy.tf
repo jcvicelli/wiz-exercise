@@ -6,204 +6,11 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "NetworkInfrastructure"
+        Sid    = "WriteAccessScopedToRegion"
         Effect = "Allow"
         Action = [
-          "ec2:CreateVpc", "ec2:DeleteVpc", "ec2:DescribeVpcs", "ec2:ModifyVpcAttribute",
-          "ec2:CreateSubnet", "ec2:DeleteSubnet", "ec2:DescribeSubnets", "ec2:ModifySubnetAttribute",
-          "ec2:CreateInternetGateway", "ec2:DeleteInternetGateway", "ec2:DescribeInternetGateways", "ec2:AttachInternetGateway", "ec2:DetachInternetGateway",
-          "ec2:CreateRouteTable", "ec2:DeleteRouteTable", "ec2:DescribeRouteTables", "ec2:AssociateRouteTable", "ec2:DisassociateRouteTable", "ec2:CreateRoute", "ec2:DeleteRoute",
-          "ec2:CreateNatGateway", "ec2:DeleteNatGateway", "ec2:DescribeNatGateways",
-          "ec2:AllocateAddress", "ec2:ReleaseAddress", "ec2:DescribeAddresses",
-          "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup", "ec2:DescribeSecurityGroups", "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress", "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress",
-          "ec2:CreateTags", "ec2:DeleteTags"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "ComputeInfrastructure"
-        Effect = "Allow"
-        Action = [
-          "ec2:RunInstances", "ec2:TerminateInstances", "ec2:StopInstances", "ec2:StartInstances", "ec2:DescribeInstances", "ec2:DescribeInstanceTypes", "ec2:DescribeInstanceAttribute", "ec2:ModifyInstanceAttribute",
-          "ec2:CreateKeyPair", "ec2:DeleteKeyPair", "ec2:DescribeKeyPairs", "ec2:ImportKeyPair",
-          "ec2:DescribeImages",
-
-
-
-
-
-
-          "ec2:CreateVolume", "ec2:DeleteVolume", "ec2:AttachVolume", "ec2:DetachVolume", "ec2:DescribeVolumes"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "EKSManagement"
-        Effect = "Allow"
-        Action = [
-          "eks:CreateCluster", "eks:DeleteCluster", "eks:DescribeCluster", "eks:UpdateClusterConfig", "eks:UpdateClusterVersion", "eks:ListClusters",
-          "eks:CreateNodegroup", "eks:DeleteNodegroup", "eks:DescribeNodegroup", "eks:UpdateNodegroupConfig", "eks:UpdateNodegroupVersion",
-          "eks:ListNodegroups", "eks:TagResource", "eks:UntagResource",
-          "eks:DescribeAddon", "eks:CreateAddon", "eks:DeleteAddon", "eks:UpdateAddon",
-          "eks:AccessKubernetesApi"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "IAMManagement"
-        Effect = "Allow"
-        Action = [
-          "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:PassRole", "iam:ListRoles", "iam:TagRole", "iam:UntagRole",
-          "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy",
-          "iam:CreatePolicy", "iam:DeletePolicy", "iam:GetPolicy", "iam:GetPolicyVersion", "iam:ListPolicyVersions", "iam:ListAttachedRolePolicies",
-          "iam:CreateInstanceProfile", "iam:DeleteInstanceProfile", "iam:GetInstanceProfile", "iam:AddRoleToInstanceProfile", "iam:RemoveRoleFromInstanceProfile",
-          "iam:CreateOpenIDConnectProvider", "iam:DeleteOpenIDConnectProvider", "iam:GetOpenIDConnectProvider", "iam:TagOpenIDConnectProvider"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "ContainerRegistry"
-        Effect = "Allow"
-        Action = [
-          "ecr:CreateRepository", "ecr:DeleteRepository", "ecr:DescribeRepositories", "ecr:ListImages", "ecr:PutImage", "ecr:BatchGetImage",
-          "ecr:PutLifecyclePolicy", "ecr:GetLifecyclePolicy", "ecr:DeleteLifecyclePolicy", "ecr:SetRepositoryPolicy", "ecr:GetRepositoryPolicy", "ecr:DeleteRepositoryPolicy",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:DescribeImages",
-          "ecr:PutImageTagMutability",
-          "ecr:PutImageScanningConfiguration",
-          "ecr:TagResource",
-          "ecr:UntagResource"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "ContainerRegistryAuth"
-        Effect = "Allow"
-        Action = [
-          "ecr:GetAuthorizationToken"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "StorageAndLogging"
-        Effect = "Allow"
-        Action = [
-          "s3:CreateBucket", "s3:DeleteBucket", "s3:ListBucket", "s3:GetBucketLocation", "s3:GetBucketPolicy", "s3:PutBucketPolicy", "s3:DeleteBucketPolicy",
-          "s3:PutBucketVersioning", "s3:GetBucketVersioning", "s3:PutBucketTagging", "s3:GetBucketTagging", "s3:PutBucketPublicAccessBlock", "s3:GetBucketPublicAccessBlock",
-          "s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket",
-          "logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:DescribeLogGroups", "logs:PutRetentionPolicy", "logs:ListTagsLogGroup", "logs:TagLogGroup"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "ServerlessAndEvents"
-        Effect = "Allow"
-        Action = [
-          "lambda:CreateFunction", "lambda:DeleteFunction", "lambda:GetFunction", "lambda:UpdateFunctionCode", "lambda:UpdateFunctionConfiguration", "lambda:ListTags", "lambda:TagResource", "lambda:UntagResource", "lambda:AddPermission", "lambda:RemovePermission",
-          "events:PutRule", "events:DeleteRule", "events:DescribeRule", "events:PutTargets", "events:RemoveTargets", "events:ListTargetsByRule"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "SecurityConfiguration"
-        Effect = "Allow"
-        Action = [
-          "config:PutConfigRule", "config:DeleteConfigRule", "config:DescribeConfigRules", "config:StartConfigRulesEvaluation",
-          "config:PutConfigurationRecorder", "config:DeleteConfigurationRecorder", "config:DescribeConfigurationRecorders", "config:StartConfigurationRecorder", "config:StopConfigurationRecorder",
-          "config:PutDeliveryChannel", "config:DeleteDeliveryChannel", "config:DescribeDeliveryChannels"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "LoadBalancing"
-        Effect = "Allow"
-        Action = [
-          "elasticloadbalancing:*"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "SecretManagement"
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret",
-          "secretsmanager:CreateSecret",
-          "secretsmanager:DeleteSecret",
-          "secretsmanager:PutSecretValue",
-          "secretsmanager:ListSecrets"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "CloudTrail"
-        Effect = "Allow"
-        Action = [
-          "cloudtrail:*"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = { "aws:RequestedRegion" : "us-west-2" }
-        }
-      },
-      {
-        Sid    = "StateAndMetadataDiscovery"
-        Effect = "Allow"
-        Action = [
-          "s3:GetBucketAcl",
-          "s3:GetEncryptionConfiguration",
-          "dynamodb:DescribeTable",
-          "iam:ListRolePolicies",
-          "iam:GetRole",
-          "iam:GetRolePolicy",
-          "ec2:DescribeVpcAttribute",
-          "ecr:ListTagsForResource",
-          "events:ListTagsForResource",
-          "logs:ListTagsForResource",
-          "secretsmanager:GetResourcePolicy"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "KMS"
-        Effect = "Allow"
-        Action = [
-          "kms:CreateKey",
-          "kms:DescribeKey",
-          "kms:ListAliases",
-          "kms:CreateAlias",
-          "kms:DeleteAlias",
-          "kms:ScheduleKeyDeletion",
-          "kms:GenerateDataKey",
-          "kms:Decrypt"
+          "ec2:*", "s3:*", "eks:*", "iam:*", "kms:*",
+          "dynamodb:*", "secretsmanager:*", "config:*", "events:*", "logs:*"
         ]
         Resource = "*"
         Condition = {
@@ -214,27 +21,14 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
   })
 }
 
-resource "aws_iam_policy" "terraform_lock_policy" {
-  name        = "TerraformLockPolicy"
-  description = "Allows GitHub Actions to manage Terraform lock table"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "attach_lock_policy" {
+# Allows Terraform to refresh state without 403s
+resource "aws_iam_role_policy_attachment" "readonly" {
   role       = aws_iam_role.github_actions_role.name
-  policy_arn = aws_iam_policy.terraform_lock_policy.arn
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
+# Explicitly required for EKS and IAM role creation
+resource "aws_iam_role_policy_attachment" "iam_full" {
+  role       = aws_iam_role.github_actions_role.name
+  policy_arn = "arn:aws:iam::aws:policy/IAMFullAccess"
 }
