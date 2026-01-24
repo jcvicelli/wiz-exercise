@@ -85,8 +85,15 @@ jobs:
           # We filter by the Name tag and ensure it's 'running' to avoid getting IPs of terminated instances.
           MONGODB_IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=wiz-exercise-mongodb" "Name=instance-state-name,Values=running" \
-            --query "Reservations[0].Instances[0].PrivateIpAddress" \
-            --output text)
+            --query "Reservations[].Instances[].PrivateIpAddress" \
+            --output text | head -n 1)
+
+          if [ -z "$MONGODB_IP" ]; then
+            echo "Error: Could not find a running MongoDB instance. Check AWS filters."
+            exit 1
+          fi
+
+          echo "Found MongoDB at: $MONGODB_IP"
 
           # 2. Get MongoDB Password from Secrets Manager
           # Secrets Manager often appends a random suffix to names in Terraform.
