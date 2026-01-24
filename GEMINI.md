@@ -20,9 +20,6 @@
 - Intentional Weaknesses: Public S3 bucket & MongoDB on Public EC2 for Wiz discovery.
 
 ## Todos
-
-check backup is working
-protect mongodb
 test hacking
 presentation
 check cloud trail, etc.

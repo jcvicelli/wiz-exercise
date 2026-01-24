@@ -28,8 +28,13 @@ spec:
                 secretKeyRef:
                   name: mongodb-secret
                   key: password
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: username
             - name: MONGODB_URI
-              value: "mongodb://mongodb-external.wiz-exercise.svc.cluster.local"
+              value: "mongodb://$(MONGODB_USER):$(MONGODB_PASSWORD)@mongodb-external.wiz-exercise.svc.cluster.local/tododb?authSource=tododb"
           resources:
             limits:
               cpu: "500m"
