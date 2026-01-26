@@ -24,7 +24,7 @@ kubectl -n wiz-exercise exec -it <pod-name> -- cat /app/wizexercise.txt
 
 
 ```bash
-curl k8s-wizexerc-todoappi-3705e4f9ea-1457289321.us-west-2.elb.amazonaws.com
+curl k8s-wizexerc-todoappi-xxx-xxx.us-west-2.elb.amazonaws.com
 
 ```
 
@@ -39,7 +39,7 @@ curl k8s-wizexerc-todoappi-3705e4f9ea-1457289321.us-west-2.elb.amazonaws.com
 * **Show Runtime Environment Variables:**
 ```bash
 # Verify the secret is injected from AWS Secrets Manager
-kubectl -n wiz-exercise exec -it todo-app-7cddd5c7b9-p7r7g -- env 
+kubectl -n wiz-exercise exec -it todo-app-xxx-p7r7g -- env 
 
 ```
 
@@ -47,7 +47,7 @@ kubectl -n wiz-exercise exec -it todo-app-7cddd5c7b9-p7r7g -- env
 * **Verify DB Connectivity:**
 ```bash
 # Simple check to see if the app pod can reach MongoDB on port 27017
-kubectl -n wiz-exercise exec -it todo-app-7cddd5c7b9-p7r7g -- nc -zv 10.0.1.9 27017
+kubectl -n wiz-exercise exec -it todo-app-xxx-p7r7g -- nc -zv 10.0.1.9 27017
 
 ```
 
@@ -73,7 +73,9 @@ db.todos.find()
 * **Public S3 Access:**
 ```bash
 # Demonstrate the bucket is open (Intentional Weakness)
-curl https://<bucket-name>.s3.us-west-2.amazonaws.com/backup.zip -o backup.zip
+curl https://wiz-exercise-mongodb-backups-xxx.s3.us-west-2.amazonaws.com/mongodb-backup-2026-01-26-02-00-23.gz -o backup.gz
+
+gzip -d < backup.gz > db.bson
 
 ```
 
@@ -108,13 +110,13 @@ fields @timestamp, srcAddr, dstAddr, srcPort, dstPort, action
 
 ## 4. 🧨 Attack Simulation (Optional Bonus)
 
-**Goal:** Showcase how preventative controls (IAM Boundaries) stop lateral movement.
+**Goal:** Showcase lateral movement.
 
 ### Scenario A: Lateral Movement from Compromised Host
 
 1. **SSH into MongoDB Instance:**
 ```bash
-ssh -i <key.pem> ubuntu@<mongodb-public-ip>
+ssh -i "wiz-exercise-key.pem" ec2-user@ec2-xxx.us-west-2.compute.amazonaws.com
 
 ```
 
@@ -127,7 +129,7 @@ aws ec2 run-instances --image-id ami-xxxx --instance-type t2.micro
 ```
 
 
-* **Result:** Should fail with `AccessDenied` due to **IAM Permission Boundaries**.
+* **Result:** Would fail with `AccessDenied` if correct set **IAM Permission Boundaries**.
 
 
 
@@ -148,7 +150,7 @@ kubectl get secrets --all-namespaces
 ```
 
 
-* **Result:** Should fail if you implemented **RBAC** correctly, limiting the pod to its own service account.
+* **Result:** Would fail if you implemented **RBAC** correctly, limiting the pod to its own service account.
 
 
 
@@ -157,6 +159,6 @@ kubectl get secrets --all-namespaces
 1. **Act as an Unauthenticated Attacker:**
 ```bash
 # Download sensitive data from the misconfigured bucket
-wget http://<bucket-name>.s3.us-west-2.amazonaws.com/customer_list.csv
+curl https://wiz-exercise-mongodb-backups-xxx.s3.us-west-2.amazonaws.com/mongodb-backup-2026-01-26-02-00-23.gz
 
 ```
