@@ -141,9 +141,6 @@ jobs:
 
       - name: Verify Deployment
         run: |
-          # Wait for deployment to be ready
-          kubectl rollout status deployment/todo-app -n wiz-exercise --timeout=5m
-
           # Show pod status
           kubectl get pods -n wiz-exercise
 
@@ -153,7 +150,6 @@ jobs:
       - name: Get Application URL
         run: |
           echo "Waiting for ALB to be provisioned (this may take 2-3 minutes)..."
-          sleep 120
 
           ALB_URL=$(kubectl get ingress todo-app-ingress -n wiz-exercise -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 

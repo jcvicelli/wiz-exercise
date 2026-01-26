@@ -6,7 +6,7 @@
 
 * **List Cluster Resources:**
 ```bash
-kubectl get pods,deployments,services,ingress -n <your-namespace>
+kubectl -n wiz-exercise get pods,deployments,services,ingress
 
 ```
 
@@ -14,7 +14,7 @@ kubectl get pods,deployments,services,ingress -n <your-namespace>
 * **Verify Persistence/Filesystem:**
 ```bash
 # Exec into the pod and read the marker file
-kubectl exec -it <pod-name> -- cat /app/wizexercise.txt
+kubectl -n wiz-exercise exec -it <pod-name> -- cat /app/wizexercise.txt
 
 ```
 
@@ -24,7 +24,7 @@ kubectl exec -it <pod-name> -- cat /app/wizexercise.txt
 
 
 ```bash
-curl -I <alb-dns-endpoint>
+curl k8s-wizexerc-todoappi-3705e4f9ea-1457289321.us-west-2.elb.amazonaws.com
 
 ```
 
@@ -34,12 +34,12 @@ curl -I <alb-dns-endpoint>
 
 ## 2. Tier-2 Connectivity & Secret Management
 
-**Goal:** Demonstrate secure "Elite" secret retrieval for the MongoDB database.
+**Goal:** Demonstrate secure secret retrieval for the MongoDB database.
 
 * **Show Runtime Environment Variables:**
 ```bash
 # Verify the secret is injected from AWS Secrets Manager
-kubectl exec -it <pod-name> -- env 
+kubectl -n wiz-exercise exec -it todo-app-7cddd5c7b9-p7r7g -- env 
 
 ```
 
@@ -47,13 +47,14 @@ kubectl exec -it <pod-name> -- env
 * **Verify DB Connectivity:**
 ```bash
 # Simple check to see if the app pod can reach MongoDB on port 27017
-kubectl exec -it <pod-name> -- nc -zv <mongodb-ec2-ip> 27017
+kubectl -n wiz-exercise exec -it todo-app-7cddd5c7b9-p7r7g -- nc -zv 10.0.1.9 27017
 
 ```
 
 * **Verify DB data:**
 ```bash
 # Login to mongodb server
+mongosh --username admin --password '{admin_password}' --authenticationDatabase admin
 mongosh
 showdbs
 use go-mongodb
