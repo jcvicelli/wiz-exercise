@@ -77,7 +77,7 @@ resource "aws_s3_bucket_policy" "config_policy" {
         Action   = "s3:PutObject"
         Resource = "${aws_s3_bucket.config_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
         Condition = {
-          StringEquals = {
+          StringEquals = {-
             "s3:x-amz-acl" = "bucket-owner-full-control"
           }
         }
@@ -204,10 +204,6 @@ resource "aws_iam_policy" "permission_boundary" {
         Effect = "Allow"
         Action = [
           "ec2:Describe*",
-          "ec2:RunInstances",
-          "ec2:CreateVolume",
-          "ec2:AttachVolume",
-          "s3:PutObject",
           "s3:GetObject",
           "s3:ListBucket",
           "ssm:UpdateInstanceInformation",
@@ -226,6 +222,10 @@ resource "aws_iam_policy" "permission_boundary" {
         Effect = "Deny"
         Action = [
           "iam:*",
+          "ec2:RunInstances",
+          "ec2:CreateVolume",
+          "ec2:AttachVolume",
+          "s3:PutObject",
           "organizations:*"
         ]
         Resource = "*"
