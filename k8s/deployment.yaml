@@ -34,7 +34,7 @@ spec:
                   name: mongodb-secret
                   key: username
             - name: MONGODB_URI
-              value: "mongodb://$(MONGODB_USER):$(MONGODB_PASSWORD)@mongodb-external.wiz-exercise.svc.cluster.local/tododb?authSource=tododb"
+              value: "mongodb://$(MONGODB_USER):$(MONGODB_PASSWORD)@mongodb-external.wiz-exercise.svc.cluster.local/go-mongodb?authSource=go-mongodb"
           resources:
             limits:
               cpu: "500m"

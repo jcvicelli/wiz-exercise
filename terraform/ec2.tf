@@ -137,9 +137,11 @@ module "ec2_mongodb" {
             mongosh admin --eval "db.createUser({user: 'admin', pwd: '$ADMIN_PWD', roles: [{role: 'userAdminAnyDatabase', db: 'admin'}, 'readWriteAnyDatabase']})"
 
             # Create application user
-            mongosh tododb --eval "db.createUser({user: '$APP_USER', pwd: '$APP_PWD', roles: [{role: 'readWrite', db: 'tododb'}]})"
             mongosh --username admin --password '$ADMIN_PWD' --authenticationDatabase admin \
-              --eval "db.getSiblingDB('tododb').grantRolesToUser('todoapp', [{ role: 'backup', db: 'admin' }])"
+              --eval "db.getSiblingDB('go-mongodb').createUser({user: '$APP_USER', pwd: '$APP_PWD', roles: [{role: 'readWrite', db: 'go-mongodb'}]})"
+
+            mongosh --username admin --password '$ADMIN_PWD' --authenticationDatabase admin \
+              --eval "db.getSiblingDB('go-mongodb').grantRolesToUser('todoapp', [{ role: 'backup', db: 'admin' }])"
 
             # Enable authentication
             echo "security:" >> /etc/mongod.conf

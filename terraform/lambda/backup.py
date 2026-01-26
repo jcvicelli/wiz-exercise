@@ -48,7 +48,7 @@ def lambda_handler(event, context):
     # Command to run on EC2
     # Using 'mongodump --archive --gzip' to stream
 
-    command = f"mongodump --username admin --password '{admin_password}' --authenticationDatabase admin --db tododb --archive --gzip | aws s3 cp - s3://{bucket_name}/{backup_file}"
+    command = f"mongodump --username admin --password '{admin_password}' --authenticationDatabase admin --db go-mongodb --archive --gzip | aws s3 cp - s3://{bucket_name}/{backup_file}"
 
     # Mask password in logs
     masked_command = command.replace(admin_password, "*****")
