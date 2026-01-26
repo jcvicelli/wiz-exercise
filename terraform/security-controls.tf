@@ -77,7 +77,7 @@ resource "aws_s3_bucket_policy" "config_policy" {
         Action   = "s3:PutObject"
         Resource = "${aws_s3_bucket.config_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
         Condition = {
-          StringEquals = {-
+          StringEquals = {
             "s3:x-amz-acl" = "bucket-owner-full-control"
           }
         }
