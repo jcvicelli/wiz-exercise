@@ -13,6 +13,13 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
+# {
+#     "Name": "al2023-ami-ecs-hvm-2023.0.20241001-kernel-6.1-x86_64",
+#     "ImageId": "ami-003d23960131b82c5",
+#     "CreationDate": "2024-10-01T21:11:07.000Z",
+#     "Architecture": "x86_64"
+# },
+
 resource "aws_security_group" "mongodb_sg" {
   name        = "mongodb-sg"
   description = "Security group for MongoDB instance"
@@ -56,7 +63,8 @@ module "ec2_mongodb" {
 
   name = "wiz-exercise-mongodb"
 
-  ami           = data.aws_ami.amazon_linux_2023.id
+  #ami           = data.aws_ami.amazon_linux_2023.id
+  ami           = "ami-003d23960131b82c5"
   instance_type = "t3.small"
   #key_name                    = "wiz-exercise-key"
   associate_public_ip_address = true
@@ -84,17 +92,6 @@ module "ec2_mongodb" {
             #!/bin/bash
             set -e
 
-            # Update system
-            dnf update -y
-
-            # Install required packages
-            dnf install -y jq
-
-            # Istall ssm agent
-            sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
-            sudo systemctl enable amazon-ssm-agent
-            sudo systemctl start amazon-ssm-agent
-
             # Add MongoDB repository
             cat <<REPO | sudo tee /etc/yum.repos.d/mongodb-org-7.0.repo
             [mongodb-org-7.0]
@@ -105,8 +102,21 @@ module "ec2_mongodb" {
             gpgkey=https://pgp.mongodb.com/server-7.0.asc
             REPO
 
+            # Update package list
+            dnf check-update
+
+            # Install required packages
+            dnf install -y jq
+
+            # Istall ssm agent
+            sudo dnf install -y amazon-ssm-agent
+            sudo systemctl enable amazon-ssm-agent
+            sudo systemctl start amazon-ssm-agent
+
             # Install MongoDB
-            sudo dnf install -y mongodb-org
+            # sudo dnf install -y mongodb-org
+            sudo dnf install -y mongodb-org-7.0.11 mongodb-org-server-7.0.11 mongodb-org-shell-7.0.11 mongodb-org-tools-7.0.11
+            sudo dnf versionlock add mongodb-org-7.0.10
 
             # Configure MongoDB to listen on all interfaces
             sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
