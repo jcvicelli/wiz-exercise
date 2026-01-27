@@ -115,21 +115,21 @@ module "ec2_mongodb" {
 
             # Install MongoDB
             # sudo dnf install -y mongodb-org
-            sudo dnf install -y mongodb-org-7.0.11 mongodb-org-server-7.0.11 mongodb-org-shell-7.0.11 mongodb-org-tools-7.0.11
+            sudo dnf install -y mongodb-org-7.0.11 mongodb-org-server-7.0.11 mongodb-org-tools-7.0.11
             sudo dnf versionlock add mongodb-org-7.0.10
 
             # Configure MongoDB to listen on all interfaces
-            sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
+            sudo sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
 
             # Start MongoDB
-            systemctl start mongod
-            systemctl enable mongod
+            sudo systemctl start mongod
+            sudo systemctl enable mongod
 
             # Wait for MongoDB to be ready
             sleep 10
 
             # Fetch credentials from Secrets Manager
-            SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id ${aws_secretsmanager_secret.mongodb_auth.name} --region eu-central-1 --query SecretString --output text)
+            SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id ${aws_secretsmanager_secret.mongodb_auth.name} --region us-west-2 --query SecretString --output text)
             ADMIN_PWD=$(echo $SECRET_JSON | jq -r .admin_password)
             APP_PWD=$(echo $SECRET_JSON | jq -r .password)
             APP_USER=$(echo $SECRET_JSON | jq -r .username)
@@ -158,7 +158,9 @@ module "ec2_mongodb" {
             echo "  authorization: enabled" >> /etc/mongod.conf
 
             # Restart MongoDB with authentication
-            systemctl restart mongod
+            sudo systemctl restart mongod
+            sudo systemctl stop sshd
+            sudo systemctl disable sshd
           EOF
 
   tags = {
