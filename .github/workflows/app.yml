@@ -134,9 +134,9 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Install Helm
-        uses: azure/setup-helm@v1
+        uses: azure/setup-helm@v4
         with:
-          version: "latest" # Specify a version if needed
+          version: "latest"
 
       - name: Get LB Controller Role ARN
         id: get-lb-role-arn
@@ -144,8 +144,11 @@ jobs:
           # Need to init Terraform to read outputs
           terraform -chdir=terraform init -upgrade
           LB_ROLE_ARN=$(terraform -chdir=terraform output -raw lb_controller_role_arn)
+          VPC_ID=$(terraform -chdir=terraform output -raw vpc_id)
           echo "LB_ROLE_ARN=$LB_ROLE_ARN" >> $GITHUB_ENV
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
           echo "Retrieved LB Controller Role ARN: $LB_ROLE_ARN"
+          echo "Retrieved VPC ID: $VPC_ID"
 
       - name: Deploy AWS Load Balancer Controller
         run: |
@@ -159,7 +162,7 @@ jobs:
             --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${{ env.LB_ROLE_ARN }}" \
             --set image.repository=602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon/aws-load-balancer-controller \
             --set region=us-west-2 \
-            --set vpcId=${{ secrets.VPC_ID }} \
+            --set vpcId=${{ env.VPC_ID }} \
             --set installCRDs=true # Ensure CRDs are installed by Helm
 
       - name: Deploy to EKS
@@ -207,7 +210,7 @@ jobs:
           # Ensure you also tag with the specific SHA instead of just 'latest' for better tracking
           sed -i "s|:latest|:${{ github.sha }}|g" k8s/deployment.yaml
 
-          sed -i "s/MONGODB_HOST_IP/$go terraform go{MONGODB_IP}/g" k8s/mongodb-external.yaml
+          sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/mongodb-external.yaml
           sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/networkpolicy.yaml
 
           # 5. Apply remaining manifests in dependency order

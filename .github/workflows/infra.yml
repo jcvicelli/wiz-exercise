@@ -35,11 +35,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsProvisionerRole
           aws-region: us-west-2
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: "latest"
-
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
         with:
@@ -59,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: terraform/
+          path: terraform/tfplan
 
   apply:
     name: "Terraform Apply"
