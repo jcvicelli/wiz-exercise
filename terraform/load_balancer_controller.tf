@@ -273,8 +273,3 @@ module "lb_controller_role" {
     }
   }
 }
-
-output "lb_controller_role_arn" {
-  description = "The ARN of the IAM role for the AWS Load Balancer Controller"
-  value       = module.lb_controller_role.iam_role_arn
-}
