@@ -52,7 +52,45 @@ jobs:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/wiz-exercise-todo-app:${{ github.sha }}
           format: "sarif"
           output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: Push Docker image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: wiz-exercise-todo-app
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsProvisionerRole
+          aws-region: us-west-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: wiz-exercise-todo-app
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./app/tasky-main
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/wiz-exercise-todo-app:${{ github.sha }}
+          format: "sarif"
+          output: "trivy-results.sarif"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
@@ -73,8 +111,63 @@ jobs:
         with:
           version: "latest"
 
-      - name: Update Kubeconfig
-        run: aws eks update-kubeconfig --name wiz-exercise-eks --region us-west-2
+      - name: Install AWS SSM Session Manager Plugin
+        run: |
+          curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
+          sudo dpkg -i session-manager-plugin.deb
+
+      - name: Get Bastion Instance ID and EKS Endpoint
+        id: get-bastion-eks-info
+        run: |
+          # Get bastion instance ID
+          BASTION_INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=wiz-exercise-bastion" "Name=instance-state-name,Values=running" \
+            --query "Reservations[].Instances[].InstanceId" \
+            --output text | head -n 1)
+          
+          if [ -z "$BASTION_INSTANCE_ID" ]; then
+            echo "Error: Bastion instance not found or not running."
+            exit 1
+          fi
+          echo "BASTION_INSTANCE_ID=$BASTION_INSTANCE_ID" >> $GITHUB_ENV
+
+          # Get EKS Cluster Endpoint
+          EKS_ENDPOINT=$(aws eks describe-cluster \
+            --name wiz-exercise-eks \
+            --query "cluster.endpoint" \
+            --output text)
+          
+          if [ -z "$EKS_ENDPOINT" ]; then
+            echo "Error: EKS cluster endpoint not found."
+            exit 1
+          fi
+          echo "EKS_ENDPOINT=$EKS_ENDPOINT" >> $GITHUB_ENV
+
+      - name: Start SSM Port Forwarding to EKS
+        run: |
+          EKS_ENDPOINT_CLEAN=$(echo ${{ env.EKS_ENDPOINT }} | sed 's|^https://||')
+          echo "Forwarding to EKS endpoint: $EKS_ENDPOINT_CLEAN via ${{ env.BASTION_INSTANCE_ID }}"
+          # Run in background, store PID
+          aws ssm start-session \
+            --target "${{ env.BASTION_INSTANCE_ID }}" \
+            --document-name AWS-StartPortForwardingSessionToRemoteHost \
+            --parameters "host=$EKS_ENDPOINT_CLEAN,portNumber=443,localPortNumber=6443" &
+          SSM_SESSION_PID=$!
+          echo "SSM_SESSION_PID=$SSM_SESSION_PID" >> $GITHUB_ENV
+          echo "SSM Port forwarding session started with PID: $SSM_SESSION_PID"
+          sleep 10 # Give the tunnel some time to establish
+        
+      - name: Update Kubeconfig for Port Forwarding
+        run: |
+          # Use the EKS endpoint directly for initial kubeconfig setup
+          aws eks update-kubeconfig --name wiz-exercise-eks --region us-west-2
+          
+          # Modify kubeconfig to use the local forwarded port
+          kubectl config set-cluster arn:aws:eks:us-west-2:${{ secrets.AWS_ACCOUNT_ID }}:cluster/wiz-exercise-eks \
+            --server=https://localhost:6443 \
+            --insecure-skip-tls-verify=true
+          
+          echo "Kubeconfig updated to use local port-forwarding (localhost:6443)."
 
       - name: Deploy to EKS
         env:
@@ -152,4 +245,15 @@ jobs:
             echo "⚠️  ALB not ready yet. Check ingress status with: kubectl describe ingress -n wiz-exercise"
           else
             echo "✅ Application available at: http://$ALB_URL"
+          fi
+      
+      - name: Terminate SSM Port Forwarding Session
+        if: always() # Run always, even if previous steps fail
+        run: |
+          if [ -n "${{ env.SSM_SESSION_PID }}" ]; then
+            echo "Terminating SSM session with PID: ${{ env.SSM_SESSION_PID }}"
+            kill ${{ env.SSM_SESSION_PID }} || true
+            echo "SSM session terminated."
+          else
+            echo "No active SSM session PID found to terminate."
           fi

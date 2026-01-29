@@ -47,28 +47,10 @@ resource "aws_instance" "bastion" {
 
   user_data = <<-EOF
               #!/bin/bash
-              set -ex
-              
-              # Install kubectl
-              curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.30.0/2024-05-12/bin/linux/amd64/kubectl
-              chmod +x ./kubectl
-              mv ./kubectl /usr/local/bin/kubectl
-
-              # Install helm
-              curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-              chmod 700 get_helm.sh
-              ./get_helm.sh
-              
-              # Install aws-iam-authenticator
-              curl -o aws-iam-authenticator https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.0/2024-01-04/bin/linux/amd64/aws-iam-authenticator
-              chmod +x ./aws-iam-authenticator
-              mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
-
-              # Install git
-              dnf install -y git
-
-              # Configure kubectl
-              aws eks update-kubeconfig --name ${module.eks.cluster_name} --region us-west-2
+              # Istall ssm agent
+              sudo dnf install -y amazon-ssm-agent
+              sudo systemctl enable amazon-ssm-agent
+              sudo systemctl start amazon-ssm-agent
               EOF
 
   tags = {
