@@ -206,6 +206,7 @@ resource "aws_iam_policy" "permission_boundary" {
           "ec2:Describe*",
           "s3:GetObject",
           "s3:ListBucket",
+          "s3:PutObject",
           "ssm:UpdateInstanceInformation",
           "ssm:GetParameter",
           "ssm:GetParameters",
@@ -225,7 +226,6 @@ resource "aws_iam_policy" "permission_boundary" {
           "ec2:RunInstances",
           "ec2:CreateVolume",
           "ec2:AttachVolume",
-          "s3:PutObject",
           "organizations:*"
         ]
         Resource = "*"
