@@ -71,6 +71,12 @@ module "eks" {
   }
 }
 
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name  = module.eks.cluster_name
+  addon_name    = "vpc-cni"
+  addon_version = "v1.18.0" # Use latest
+}
+
 data "aws_caller_identity" "current" {}
 
 output "eks_cluster_name" {
