@@ -1,3 +1,16 @@
+data "http" "github_ips" {
+  url = "https://api.github.com/meta"
+  request_headers = {
+    Accept = "application/vnd.github.v3+json"
+  }
+}
+
+locals {
+  github_cidrs  = jsondecode(data.http.github_ips.response_body).actions
+  home_ip_cidrs = ["80.144.223.23/32"]
+  allowed_cidrs = distinct(concat(local.github_cidrs, local.home_ip_cidrs))
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "21.15.1"
@@ -5,9 +18,9 @@ module "eks" {
   name               = "wiz-exercise-eks"
   kubernetes_version = "1.33"
 
-  endpoint_public_access       = true
-  endpoint_private_access      = true
-  endpoint_public_access_cidrs = ["80.144.223.23/32"]
+  endpoint_public_access  = true
+  endpoint_private_access = true
+  public_access_cidrs     = local.allowed_cidrs
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
