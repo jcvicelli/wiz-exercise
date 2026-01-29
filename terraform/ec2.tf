@@ -59,7 +59,7 @@ resource "aws_security_group" "mongodb_sg" {
 
 module "ec2_mongodb" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "~> 5.6.0"
+  version = "~> 6.2.0"
 
   name = "wiz-exercise-mongodb"
 
@@ -73,13 +73,18 @@ module "ec2_mongodb" {
   iam_instance_profile        = aws_iam_instance_profile.mongodb_profile.name
   user_data_replace_on_change = false
 
-  root_block_device = [
-    {
-      volume_type = "gp3"
-      volume_size = 50
-      encrypted   = true
-    }
-  ]
+  # root_block_device = [
+  #   {
+  #     volume_type = "gp3"
+  #     volume_size = 50
+  #     encrypted   = true
+  #   }
+  # ]
+  root_block_device = {
+    volume_type = "gp3"
+    volume_size = 50
+    encrypted   = true
+  }
 
   # Enforce IMDSv2
   metadata_options = {

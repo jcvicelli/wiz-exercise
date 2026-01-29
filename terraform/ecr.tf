@@ -1,5 +1,6 @@
 resource "aws_ecr_repository" "app" {
-  name                 = "wiz-exercise-todo-app"
+  name = "wiz-exercise-todo-app"
+  # allows latest tag, but it's not secure
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {

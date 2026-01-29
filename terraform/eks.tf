@@ -1,11 +1,13 @@
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+  version = "21.15.1"
 
-  cluster_name    = "wiz-exercise-eks"
-  cluster_version = "1.33"
+  name               = "wiz-exercise-eks"
+  kubernetes_version = "1.33"
 
-  cluster_endpoint_public_access = true
+  endpoint_public_access       = true
+  endpoint_private_access      = true
+  endpoint_public_access_cidrs = ["80.144.223.23/32"]
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -19,11 +21,17 @@ module "eks" {
 
       instance_types = ["t3.medium"]
       capacity_type  = "ON_DEMAND"
+
+      metadata_options = {
+        http_put_response_hop_limit = 2
+        http_endpoint               = "enabled"
+        http_tokens                 = "required"
+      }
     }
   }
 
   # Cluster logging (Detective Control)
-  cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   # Modern Access Entries (No aws-auth ConfigMap)
   enable_cluster_creator_admin_permissions = true

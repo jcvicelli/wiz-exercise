@@ -4,7 +4,7 @@ resource "random_id" "bucket_suffix" {
 
 module "s3_backup_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "~> 4.1.0"
+  version = "~> 4.1.2"
 
   bucket = "wiz-exercise-mongodb-backups-${random_id.bucket_suffix.hex}"
 

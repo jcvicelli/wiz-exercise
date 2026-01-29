@@ -1,6 +1,6 @@
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.5.0"
+  version = "~> 5.9.0"
 
   name = "wiz-exercise-vpc"
   cidr = var.vpc_cidr
