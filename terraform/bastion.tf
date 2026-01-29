@@ -44,7 +44,7 @@ resource "aws_instance" "bastion" {
   iam_instance_profile   = aws_iam_instance_profile.bastion_profile.name
 
   associate_public_ip_address = false
-  # make sure ssm is running
+  # make sure ssm is running before
   user_data = <<-EOF
               #!/bin/bash
               # Istall ssm agent
