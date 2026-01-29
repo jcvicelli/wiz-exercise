@@ -9,6 +9,7 @@ on:
     branches: ["main"]
     paths:
       - "terraform/**"
+      - ".github/**"
 
 permissions:
   id-token: write
@@ -53,7 +54,7 @@ jobs:
             --filters "Name=tag:Name,Values=wiz-exercise-bastion" "Name=instance-state-name,Values=running" \
             --query "Reservations[].Instances[].InstanceId" \
             --output text | head -n 1)
-          
+
           if [ -z "$BASTION_INSTANCE_ID" ]; then
             echo "Error: Bastion instance not found or not running."
             exit 1
@@ -65,7 +66,7 @@ jobs:
             --name wiz-exercise-eks \
             --query "cluster.endpoint" \
             --output text)
-          
+
           if [ -z "$EKS_ENDPOINT" ]; then
             echo "Error: EKS cluster endpoint not found."
             exit 1
@@ -85,17 +86,17 @@ jobs:
           echo "SSM_SESSION_PID=$SSM_SESSION_PID" >> $GITHUB_ENV
           echo "SSM Port forwarding session started with PID: $SSM_SESSION_PID"
           sleep 10 # Give the tunnel some time to establish
-        
+
       - name: Update Kubeconfig for Port Forwarding
         run: |
           # Use the EKS endpoint directly for initial kubeconfig setup
           aws eks update-kubeconfig --name wiz-exercise-eks --region us-west-2
-          
+
           # Modify kubeconfig to use the local forwarded port
           kubectl config set-cluster arn:aws:eks:us-west-2:${{ secrets.AWS_ACCOUNT_ID }}:cluster/wiz-exercise-eks \
             --server=https://localhost:6443 \
             --insecure-skip-tls-verify=true
-          
+
           echo "Kubeconfig updated to use local port-forwarding (localhost:6443)."
 
       - name: Run Checkov
@@ -123,7 +124,7 @@ jobs:
         with:
           name: tfplan
           path: terraform/
-      
+
       - name: Terminate SSM Port Forwarding Session
         if: always() # Run always, even if previous steps fail
         run: |
@@ -176,7 +177,7 @@ jobs:
             --filters "Name=tag:Name,Values=wiz-exercise-bastion" "Name=instance-state-name,Values=running" \
             --query "Reservations[].Instances[].InstanceId" \
             --output text | head -n 1)
-          
+
           if [ -z "$BASTION_INSTANCE_ID" ]; then
             echo "Error: Bastion instance not found or not running."
             exit 1
@@ -188,7 +189,7 @@ jobs:
             --name wiz-exercise-eks \
             --query "cluster.endpoint" \
             --output text)
-          
+
           if [ -z "$EKS_ENDPOINT" ]; then
             echo "Error: EKS cluster endpoint not found."
             exit 1
@@ -208,17 +209,17 @@ jobs:
           echo "SSM_SESSION_PID=$SSM_SESSION_PID" >> $GITHUB_ENV
           echo "SSM Port forwarding session started with PID: $SSM_SESSION_PID"
           sleep 10 # Give the tunnel some time to establish
-        
+
       - name: Update Kubeconfig for Port Forwarding
         run: |
           # Use the EKS endpoint directly for initial kubeconfig setup
           aws eks update-kubeconfig --name wiz-exercise-eks --region us-west-2
-          
+
           # Modify kubeconfig to use the local forwarded port
           kubectl config set-cluster arn:aws:eks:us-west-2:${{ secrets.AWS_ACCOUNT_ID }}:cluster/wiz-exercise-eks \
             --server=https://localhost:6443 \
             --insecure-skip-tls-verify=true
-          
+
           echo "Kubeconfig updated to use local port-forwarding (localhost:6443)."
 
       - name: Download Plan
@@ -236,7 +237,7 @@ jobs:
         run: |
           export KUBECONFIG=~/.kube/config # Ensure Terraform uses the modified kubeconfig
           terraform apply -auto-approve tfplan
-      
+
       - name: Terminate SSM Port Forwarding Session
         if: always() # Run always, even if previous steps fail
         run: |
