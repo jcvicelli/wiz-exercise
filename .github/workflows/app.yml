@@ -125,10 +125,10 @@ jobs:
 
           # Modify kubeconfig to use the local forwarded port
           kubectl config set-cluster arn:aws:eks:us-west-2:${{ secrets.AWS_ACCOUNT_ID }}:cluster/wiz-exercise-eks \
-            --server=https://localhost:6443 \
+            --server=https://127.0.0.1:6443 \
             --insecure-skip-tls-verify=true
 
-          echo "Kubeconfig updated to use local port-forwarding (localhost:6443)."
+          echo "Kubeconfig updated to use local port-forwarding (127.0.0.1:6443)."
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

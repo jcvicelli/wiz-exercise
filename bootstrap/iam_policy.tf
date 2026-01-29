@@ -10,7 +10,7 @@ resource "aws_iam_role_policy" "scoped_provisioning_policy" {
         Effect = "Allow"
         Action = [
           "ec2:*", "ecr:*", "s3:*", "eks:*", "iam:*", "kms:*",
-          "dynamodb:*", "secretsmanager:*", "config:*", "events:*", "logs:*"
+          "dynamodb:*", "secretsmanager:*", "config:*", "events:*", "logs:*", "ssm:*"
         ]
         Resource = "*"
         Condition = {
