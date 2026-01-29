@@ -274,45 +274,7 @@ module "lb_controller_role" {
   }
 }
 
-resource "helm_release" "aws_load_balancer_controller" {
-  name       = "aws-load-balancer-controller"
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-load-balancer-controller"
-  namespace  = "kube-system"
-
-  set {
-    name  = "install_crds"
-    value = true
-  }
-  set {
-    name  = "clusterName"
-    value = module.eks.cluster_name
-  }
-
-  set {
-    name  = "serviceAccount.create"
-    value = "true"
-  }
-
-  set {
-    name  = "serviceAccount.name"
-    value = "aws-load-balancer-controller"
-  }
-
-  # Ensure the backslashes are present to escape the dots in the annotation key
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.lb_controller_role.iam_role_arn
-  }
-
-  # Highly recommended for stability
-  set {
-    name  = "region"
-    value = "us-west-2"
-  }
-
-  set {
-    name  = "vpcId"
-    value = module.vpc.vpc_id
-  }
+output "lb_controller_role_arn" {
+  description = "The ARN of the IAM role for the AWS Load Balancer Controller"
+  value       = module.lb_controller_role.iam_role_arn
 }
