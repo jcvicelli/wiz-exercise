@@ -166,34 +166,40 @@ jobs:
           helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
             --namespace kube-system \
             --set clusterName=wiz-exercise-eks \
-            --set serviceAccount.create=false \
-            --set serviceAccount.name=aws-load-balancer-controller \
+            --set serviceAccount.create=true \
             --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${{ env.LB_ROLE_ARN }}" \
-            --set image.repository=602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon/aws-load-balancer-controller \
+            --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com/amazon/aws-load-balancer-controller \
             --set region=us-west-2 \
             --set vpcId=${{ env.VPC_ID }} \
-            --set installCRDs=true # Ensure CRDs are installed by Helm
+            --set installCRDs=true
 
       - name: Deploy to EKS
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          # 1. Get infrastructure info
-          # 1. Get MongoDB Private IP
-          # We filter by the Name tag and ensure it's 'running' to avoid getting IPs of terminated instances.
+          set -e
+
+          # Get MongoDB Private IP
           MONGODB_IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=wiz-exercise-mongodb" "Name=instance-state-name,Values=running" \
             --query "Reservations[].Instances[].PrivateIpAddress" \
             --output text | head -n 1)
 
+          if [ -z "$MONGODB_IP" ]; then
+            echo "Error: MongoDB instance not found"
+            exit 1
+          fi
           echo "Found MongoDB at: $MONGODB_IP"
 
-          # 2. Get MongoDB Password from Secrets Manager
-          # Secrets Manager often appends a random suffix to names in Terraform.
-          # This find-and-fetch logic ensures we get the right one.
+          # Get MongoDB credentials from Secrets Manager
           SECRET_NAME=$(aws secretsmanager list-secrets \
             --query "SecretList[?starts_with(Name, 'wiz-exercise/mongodb-auth')].Name" \
             --output text | awk '{print $1}')
+
+          if [ -z "$SECRET_NAME" ]; then
+            echo "Error: MongoDB secret not found"
+            exit 1
+          fi
 
           SECRET_JSON=$(aws secretsmanager get-secret-value \
             --secret-id "$SECRET_NAME" \
@@ -202,27 +208,23 @@ jobs:
           MONGODB_PASSWORD=$(echo "$SECRET_JSON" | jq -r .password)
           MONGODB_USER=$(echo "$SECRET_JSON" | jq -r .username)
 
-          # 2. Create namespace FIRST
+          # Create namespace
           kubectl apply -f k8s/namespace.yaml
 
-          # 3. Create secret (namespace now exists)
+          # Create MongoDB secret
           kubectl create secret generic mongodb-secret \
             --namespace wiz-exercise \
             --from-literal=password="$MONGODB_PASSWORD" \
             --from-literal=username="$MONGODB_USER" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          # 4. Replace placeholders
-          #
-          # Fix: Use | instead of / to avoid URI conflicts
+          # Replace placeholders in manifests
           sed -i "s|AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com|${ECR_REGISTRY}|g" k8s/deployment.yaml
-          # Ensure you also tag with the specific SHA instead of just 'latest' for better tracking
           sed -i "s|:latest|:${{ github.sha }}|g" k8s/deployment.yaml
-
           sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/mongodb-external.yaml
           sed -i "s/MONGODB_HOST_IP/${MONGODB_IP}/g" k8s/networkpolicy.yaml
 
-          # 5. Apply remaining manifests in dependency order
+          # Apply manifests in dependency order
           kubectl apply -f k8s/serviceaccount.yaml
           kubectl apply -f k8s/mongodb-external.yaml
           kubectl apply -f k8s/clusterrolebinding.yaml
@@ -243,14 +245,26 @@ jobs:
       - name: Get Application URL
         run: |
           echo "Waiting for ALB to be provisioned (this may take 2-3 minutes)..."
+          MAX_ATTEMPTS=36
+          ATTEMPT=0
 
-          ALB_URL=$(kubectl get ingress todo-app-ingress -n wiz-exercise -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ALB_URL=$(kubectl get ingress todo-app-ingress -n wiz-exercise -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
 
-          if [ -z "$ALB_URL" ]; then
-            echo "⚠️  ALB not ready yet. Check ingress status with: kubectl describe ingress -n wiz-exercise"
-          else
-            echo "✅ Application available at: http://$ALB_URL"
-          fi
+            if [ -n "$ALB_URL" ]; then
+              echo "✅ Application available at: http://$ALB_URL"
+              exit 0
+            fi
+
+            ATTEMPT=$((ATTEMPT+1))
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: ALB not ready yet, waiting..."
+            sleep 5
+          done
+
+          echo "⚠️  ALB not ready after 3 minutes."
+          echo "Ingress status:"
+          kubectl describe ingress todo-app-ingress -n wiz-exercise
+          exit 1
 
       - name: Terminate SSM Port Forwarding Session
         if: always() # Run always, even if previous steps fail
