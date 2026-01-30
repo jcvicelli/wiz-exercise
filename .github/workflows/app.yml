@@ -116,19 +116,28 @@ jobs:
           SSM_SESSION_PID=$!
           echo "SSM_SESSION_PID=$SSM_SESSION_PID" >> $GITHUB_ENV
           echo "SSM Port forwarding session started with PID: $SSM_SESSION_PID"
-          sleep 10 # Give the tunnel some time to establish
+
+          # Wait for tunnel and verify connectivity
+          echo "Waiting for tunnel to stabilize..."
+          timeout 60s bash -c "until nc -zv 127.0.0.1 6443; do sleep 2; done" || (echo "Tunnel failed to establish" && exit 1)
+          echo "Tunnel established successfully."
 
       - name: Update Kubeconfig for Port Forwarding
         run: |
-          # Use the EKS endpoint directly for initial kubeconfig setup
+          # Use the EKS endpoint directly for kubeconfig setup with proper auth
           aws eks update-kubeconfig --name wiz-exercise-eks --region us-west-2
 
-          # Modify kubeconfig to use the local forwarded port
-          kubectl config set-cluster arn:aws:eks:us-west-2:${{ secrets.AWS_ACCOUNT_ID }}:cluster/wiz-exercise-eks \
+          # Modify kubeconfig to use the local forwarded port while preserving auth
+          CLUSTER_ARN="arn:aws:eks:us-west-2:${{ secrets.AWS_ACCOUNT_ID }}:cluster/wiz-exercise-eks"
+          kubectl config set-cluster $CLUSTER_ARN \
             --server=https://127.0.0.1:6443 \
             --insecure-skip-tls-verify=true
 
-          echo "Kubeconfig updated to use local port-forwarding (127.0.0.1:6443)."
+          # Ensure the context uses the correct user with AWS IAM auth
+          kubectl config set-context $CLUSTER_ARN --cluster=$CLUSTER_ARN --user=$CLUSTER_ARN
+          kubectl config use-context $CLUSTER_ARN
+
+          echo "Kubeconfig updated to use local port-forwarding (127.0.0.1:6443) with proper authentication."
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

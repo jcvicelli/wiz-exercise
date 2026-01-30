@@ -96,6 +96,24 @@ resource "aws_iam_role_policy_attachment" "bastion_ssm_managed" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+resource "aws_iam_role_policy" "bastion_eks_describe" {
+  name = "BastionEKSDescribe"
+  role = aws_iam_role.bastion_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "eks:DescribeCluster"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "bastion_profile" {
   name = "BastionInstanceProfile"
   role = aws_iam_role.bastion_role.name

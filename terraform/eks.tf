@@ -11,6 +11,30 @@ module "eks" {
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
+  # Cluster security group
+  security_group_additional_rules = {
+    bastion_https = {
+      description              = "Allow HTTPS from Bastion"
+      protocol                 = "tcp"
+      from_port                = 443
+      to_port                  = 443
+      type                     = "ingress"
+      source_security_group_id = aws_security_group.bastion_sg.id
+    }
+  }
+
+  # Node security group
+  node_security_group_additional_rules = {
+    bastion_https = {
+      description              = "Allow HTTPS from Bastion"
+      protocol                 = "tcp"
+      from_port                = 443
+      to_port                  = 443
+      type                     = "ingress"
+      source_security_group_id = aws_security_group.bastion_sg.id
+    }
+  }
+
   # EKS Managed Node Group(s)
   eks_managed_node_groups = {
     main = {
@@ -68,12 +92,6 @@ module "eks" {
     Environment = "dev"
     Terraform   = "true"
   }
-}
-
-resource "aws_eks_addon" "vpc_cni" {
-  cluster_name  = module.eks.cluster_name
-  addon_name    = "vpc-cni"
-  addon_version = "v1.20.4" # Use latest
 }
 
 data "aws_caller_identity" "current" {}
