@@ -13,7 +13,7 @@ func index(c *gin.Context) {
 
 func main() {
 	godotenv.Overload()
-	
+	// better comments
 	router := gin.Default()
 	router.LoadHTMLGlob("assets/*.html")
 	router.Static("/assets", "./assets")
